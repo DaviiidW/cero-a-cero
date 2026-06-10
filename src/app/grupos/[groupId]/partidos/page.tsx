@@ -1,4 +1,5 @@
 import { GroupNav } from "@/components/groups/group-nav";
+import { MatchesListClient } from "@/components/matches/matches-list-client";
 import { requireAuthenticatedUser, requireGroupAccess } from "@/lib/groups/access";
 
 type PageProps = {
@@ -16,14 +17,12 @@ export default async function PartidosPage({ params }: PageProps) {
         <h1 className="text-3xl font-semibold tracking-tight">
           {membership.group.name}
         </h1>
-        <p className="text-muted-foreground">Partidos del grupo</p>
+        <p className="text-muted-foreground">Partidos del torneo</p>
       </div>
 
       <GroupNav groupId={groupId} active="partidos" />
 
-      <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-        Los partidos estarán disponibles próximamente.
-      </div>
+      <MatchesListClient groupId={groupId} />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   normalizeInviteCode,
 } from "@/lib/invite-code";
 import { GROUP_ERRORS } from "@/lib/groups/errors";
+import { buildRankingWithTies } from "@/lib/scoring/ranking";
 
 type GroupActionError = {
   error: string;
@@ -416,8 +417,14 @@ export async function getUserGroups(userId: string) {
     const groupPoints = allPoints.filter(
       (point) => point.groupId === membership.groupId
     );
+    const ranked = buildRankingWithTies(
+      groupPoints.map((point) => ({
+        userId: point.userId,
+        points: point.points,
+      }))
+    );
     const position =
-      groupPoints.findIndex((point) => point.userId === userId) + 1 || null;
+      ranked.find((row) => row.userId === userId)?.position ?? null;
 
     return {
       id: membership.group.id,
@@ -426,7 +433,7 @@ export async function getUserGroups(userId: string) {
       memberCount: membership.group._count.members,
       nick: membership.nick,
       role: membership.role,
-      position: position || null,
+      position,
       joinedAt: membership.joinedAt,
     };
   });

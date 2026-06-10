@@ -86,6 +86,7 @@ model Member {
 
 model Match {
   id               String      @id @default(cuid())
+  externalId       Int?        @unique
   homeTeam         String
   awayTeam         String
   date             DateTime
@@ -96,6 +97,9 @@ model Match {
   awayGoals        Int?
 
   predictions Prediction[]
+
+  @@index([status])
+  @@index([date])
 }
 
 model Prediction {
@@ -106,6 +110,8 @@ model Prediction {
   predictionHomeGoals Int
   predictionAwayGoals Int
   resultType          ResultType
+  pointsEarned        Int?
+  scoredAt            DateTime?
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
 

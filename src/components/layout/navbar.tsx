@@ -37,6 +37,9 @@ export function Navbar() {
                 <Link href="/grupos">Grupos</Link>
               </Button>
               <Button variant="ghost" size="sm" asChild>
+                <Link href="/ranking">Ranking</Link>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
                 <Link href="/perfil">Perfil</Link>
               </Button>
               <Button variant="outline" size="sm" onClick={handleSignOut}>

@@ -10,7 +10,7 @@ const items = [
   { key: "detail", href: "", label: "Resumen" },
   { key: "clasificacion", href: "/clasificacion", label: "Clasificación" },
   { key: "partidos", href: "/partidos", label: "Partidos" },
-  { key: "predicciones", href: "/predicciones", label: "Predicciones" },
+  { key: "predicciones", href: "/predicciones", label: "Historial" },
 ] as const;
 
 export function GroupNav({ groupId, active }: GroupNavProps) {

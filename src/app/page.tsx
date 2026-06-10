@@ -34,6 +34,9 @@ export default async function HomePage() {
         <Button variant="outline" asChild>
           <Link href="/grupos/unirse">Unirse con código</Link>
         </Button>
+        <Button variant="outline" asChild>
+          <Link href="/ranking">Ranking global</Link>
+        </Button>
       </div>
     </div>
   );

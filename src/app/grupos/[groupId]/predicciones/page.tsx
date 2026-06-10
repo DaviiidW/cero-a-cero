@@ -1,4 +1,5 @@
 import { GroupNav } from "@/components/groups/group-nav";
+import { HistoryListClient } from "@/components/history/history-list-client";
 import { requireAuthenticatedUser, requireGroupAccess } from "@/lib/groups/access";
 
 type PageProps = {
@@ -16,14 +17,14 @@ export default async function PrediccionesPage({ params }: PageProps) {
         <h1 className="text-3xl font-semibold tracking-tight">
           {membership.group.name}
         </h1>
-        <p className="text-muted-foreground">Predicciones del grupo</p>
+        <p className="text-muted-foreground">
+          Historial de predicciones y puntuación
+        </p>
       </div>
 
       <GroupNav groupId={groupId} active="predicciones" />
 
-      <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground">
-        Las predicciones estarán disponibles próximamente.
-      </div>
+      <HistoryListClient groupId={groupId} />
     </div>
   );
 }
