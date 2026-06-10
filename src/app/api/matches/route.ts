@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { requireAuthUser } from "@/lib/auth-api";
 import { jsonError } from "@/lib/api";
 import { db } from "@/lib/db";
+import { startLiveMatchesScheduler } from "@/lib/football-data/sync";
+
+// Inicializa el planificador en segundo plano para partidos en vivo
+startLiveMatchesScheduler();
 
 export async function GET() {
   const user = await requireAuthUser();
@@ -20,6 +24,7 @@ export async function GET() {
       date: true,
       phase: true,
       groupStageNumber: true,
+      jornada: true,
       status: true,
       homeGoals: true,
       awayGoals: true,

@@ -42,7 +42,14 @@ export async function GET(_request: Request, context: RouteContext) {
 
   // HU-05 y HU-07: Si el partido está "LIVE" o "FINISHED", mostramos las predicciones del grupo
   const isVisibleForGroup = match.status === "LIVE" || match.status === "FINISHED";
-  let formattedGroupPredictions: any[] = [];
+  let formattedGroupPredictions: {
+    userId: string;
+    nick: string;
+    predictionHomeGoals: number;
+    predictionAwayGoals: number;
+    resultType: string;
+    pointsEarned: number | null;
+  }[] = [];
 
   if (isVisibleForGroup) {
     const groupPredictions = await db.prediction.findMany({
@@ -107,11 +114,11 @@ export async function POST(request: Request, context: RouteContext) {
     return jsonError("Partido no encontrado", 404);
   }
 
-  // HU-02 y HU-03: Bloqueo de predicciones 5 minutos antes del partido
+  // Bloqueo de predicciones 3 minutos antes del partido
   const now = new Date();
-  const lockTime = new Date(match.date.getTime() - 5 * 60 * 1000);
+  const lockTime = new Date(match.date.getTime() - 3 * 60 * 1000);
   if (now >= lockTime) {
-    return jsonError("Predicciones bloqueadas. Faltan menos de 5 minutos para el partido.", 400);
+    return jsonError("Predicciones bloqueadas. Faltan menos de 3 minutos para el partido.", 400);
   }
 
   // HU-10: Validación de consistencia

@@ -1,0 +1,680 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { formatScore } from "@/lib/scoring/labels";
+
+type Match = {
+  id: string;
+  externalId: number | null;
+  homeTeam: string;
+  awayTeam: string;
+  homeTeamCrest: string | null;
+  awayTeamCrest: string | null;
+  date: string;
+  phase: string;
+  groupStageNumber: number | null;
+  jornada: number;
+  status: string;
+  homeGoals: number | null;
+  awayGoals: number | null;
+};
+
+const PHASES = [
+  "Fase de grupos",
+  "Dieciseisavos de final",
+  "Octavos de final",
+  "Cuartos de final",
+  "Semifinales",
+  "Tercer puesto",
+  "Final",
+];
+
+const JORNADAS = [
+  { id: 1, label: "Jornada 1" },
+  { id: 2, label: "Jornada 2" },
+  { id: 3, label: "Jornada 3" },
+  { id: 4, label: "Dieciseisavos de final (J4)" },
+  { id: 5, label: "Octavos de final (J5)" },
+  { id: 6, label: "Cuartos de final (J6)" },
+  { id: 7, label: "Semifinales (J7)" },
+  { id: 8, label: "Tercer puesto y Final (J8)" },
+];
+
+export function AdminDashboardClient() {
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [filterJornada, setFilterJornada] = useState<number | "all">("all");
+
+  // Create match modal state
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    homeTeam: "",
+    awayTeam: "",
+    homeTeamCrest: "",
+    awayTeamCrest: "",
+    date: "",
+    phase: "Fase de grupos",
+    groupStageNumber: "",
+    jornada: "1",
+    status: "SCHEDULED",
+    homeGoals: "",
+    awayGoals: "",
+  });
+
+  // Edit match modal state
+  const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+  const [editForm, setEditForm] = useState({
+    homeTeam: "",
+    awayTeam: "",
+    homeTeamCrest: "",
+    awayTeamCrest: "",
+    date: "",
+    phase: "",
+    groupStageNumber: "",
+    jornada: "1",
+    status: "",
+    homeGoals: "",
+    awayGoals: "",
+  });
+
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formSuccess, setFormSuccess] = useState<string | null>(null);
+
+  const fetchMatches = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/admin/matches");
+      if (!response.ok) {
+        throw new Error("No se pudieron cargar los partidos.");
+      }
+      const data = await response.json();
+      setMatches(data.matches);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error al cargar partidos.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMatches();
+  }, []);
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/matches/sync", {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Error al sincronizar.");
+      }
+      alert(`Sincronización exitosa:\n- Partidos actualizados: ${data.matchesSynced}\n- Predicciones procesadas: ${data.predictionsProcessed}`);
+      fetchMatches();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Error de sincronización.");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleCreateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    setFormSuccess(null);
+
+    try {
+      const response = await fetch("/api/admin/matches", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(createForm),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Error al crear el partido.");
+      }
+
+      setFormSuccess("¡Partido creado con éxito!");
+      setShowCreate(false);
+      // Reset form
+      setCreateForm({
+        homeTeam: "",
+        awayTeam: "",
+        homeTeamCrest: "",
+        awayTeamCrest: "",
+        date: "",
+        phase: "Fase de grupos",
+        groupStageNumber: "",
+        jornada: "1",
+        status: "SCHEDULED",
+        homeGoals: "",
+        awayGoals: "",
+      });
+      fetchMatches();
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : "Error al crear el partido.");
+    }
+  };
+
+  const handleEditClick = (match: Match) => {
+    // Formatter for datetime-local input (YYYY-MM-DDTHH:mm)
+    const formattedDate = new Date(match.date).toISOString().slice(0, 16);
+
+    setEditingMatch(match);
+    setEditForm({
+      homeTeam: match.homeTeam,
+      awayTeam: match.awayTeam,
+      homeTeamCrest: match.homeTeamCrest || "",
+      awayTeamCrest: match.awayTeamCrest || "",
+      date: formattedDate,
+      phase: match.phase,
+      groupStageNumber: match.groupStageNumber !== null ? match.groupStageNumber.toString() : "",
+      jornada: match.jornada.toString(),
+      status: match.status,
+      homeGoals: match.homeGoals !== null ? match.homeGoals.toString() : "",
+      awayGoals: match.awayGoals !== null ? match.awayGoals.toString() : "",
+    });
+    setFormError(null);
+    setFormSuccess(null);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingMatch) return;
+    setFormError(null);
+    setFormSuccess(null);
+
+    try {
+      const response = await fetch(`/api/admin/matches/${editingMatch.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Error al actualizar el partido.");
+      }
+
+      setFormSuccess("¡Partido actualizado correctamente!");
+      setEditingMatch(null);
+      fetchMatches();
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : "Error al actualizar el partido.");
+    }
+  };
+
+  const handleDeleteClick = async (id: string) => {
+    if (!confirm("¿Estás seguro de que deseas eliminar este partido?")) return;
+
+    try {
+      const response = await fetch(`/api/admin/matches/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Error al eliminar.");
+      }
+
+      fetchMatches();
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Error al eliminar.");
+    }
+  };
+
+  const filteredMatches = filterJornada === "all"
+    ? matches
+    : matches.filter((m) => m.jornada === filterJornada);
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "FINISHED":
+        return <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-500/10 text-emerald-500">Finalizado</span>;
+      case "LIVE":
+        return <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-red-500/10 text-red-500 animate-pulse">En juego</span>;
+      default:
+        return <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-slate-500/10 text-slate-500">Programado</span>;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Botones de acción y filtros */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-card p-4 rounded-2xl border border-border shadow-sm">
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium text-muted-foreground select-none">Jornada:</label>
+          <select
+            value={filterJornada}
+            onChange={(e) => setFilterJornada(e.target.value === "all" ? "all" : parseInt(e.target.value, 10))}
+            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="all">Todas las jornadas</option>
+            {JORNADAS.map((j) => (
+              <option key={j.id} value={j.id}>{j.label}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="px-4 py-2 text-sm font-semibold rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/90 transition disabled:opacity-50"
+          >
+            {syncing ? "Sincronizando..." : "Sincronizar desde API"}
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="px-4 py-2 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition"
+          >
+            Añadir Partido
+          </button>
+        </div>
+      </div>
+
+      {/* Listado de partidos */}
+      {loading ? (
+        <p className="text-center py-10 text-muted-foreground">Cargando partidos...</p>
+      ) : error ? (
+        <p className="text-center py-10 text-destructive font-medium">{error}</p>
+      ) : filteredMatches.length === 0 ? (
+        <div className="text-center py-10 rounded-2xl border border-dashed border-border text-muted-foreground">
+          No hay partidos en esta jornada.
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-muted text-muted-foreground text-xs uppercase font-medium select-none">
+                <tr>
+                  <th className="px-4 py-3">Jornada / Fase</th>
+                  <th className="px-4 py-3">Partido</th>
+                  <th className="px-4 py-3 text-center">Marcador</th>
+                  <th className="px-4 py-3 text-center">Estado</th>
+                  <th className="px-4 py-3">Fecha y Hora (Local)</th>
+                  <th className="px-4 py-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredMatches.map((match) => (
+                  <tr key={match.id} className="hover:bg-muted/30 transition">
+                    <td className="px-4 py-3 font-medium text-muted-foreground whitespace-nowrap">
+                      J{match.jornada} · {match.phase}
+                    </td>
+                    <td className="px-4 py-3 font-semibold whitespace-nowrap">
+                      <div className="flex items-center gap-2">
+                        {match.homeTeamCrest && (
+                          <img src={match.homeTeamCrest} alt="flag" className="h-3.5 w-5 object-cover rounded-sm border border-muted/50" />
+                        )}
+                        <span>{match.homeTeam}</span>
+                        <span className="text-xs text-muted-foreground font-normal mx-0.5">vs</span>
+                        {match.awayTeamCrest && (
+                          <img src={match.awayTeamCrest} alt="flag" className="h-3.5 w-5 object-cover rounded-sm border border-muted/50" />
+                        )}
+                        <span>{match.awayTeam}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center font-bold text-base whitespace-nowrap">
+                      {formatScore(match.homeGoals, match.awayGoals)}
+                    </td>
+                    <td className="px-4 py-3 text-center whitespace-nowrap">
+                      {getStatusBadge(match.status)}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground text-xs">
+                      {new Date(match.date).toLocaleString("es-ES")}
+                    </td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleEditClick(match)}
+                          className="px-2.5 py-1 text-xs font-semibold rounded border border-input hover:bg-muted/80 transition"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(match.id)}
+                          className="px-2.5 py-1 text-xs font-semibold rounded border border-destructive/20 text-destructive hover:bg-destructive/10 transition"
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CREAR PARTIDO */}
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-card w-full max-w-lg rounded-2xl border border-border p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-foreground">Añadir Nuevo Partido</h3>
+              <button onClick={() => setShowCreate(false)} className="text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+            
+            <form onSubmit={handleCreateSubmit} className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-medium">Equipo Local</label>
+                  <input
+                    type="text"
+                    required
+                    value={createForm.homeTeam}
+                    onChange={(e) => setCreateForm({ ...createForm, homeTeam: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium">Equipo Visitante</label>
+                  <input
+                    type="text"
+                    required
+                    value={createForm.awayTeam}
+                    onChange={(e) => setCreateForm({ ...createForm, awayTeam: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-medium">Bandera Local (URL crest)</label>
+                  <input
+                    type="text"
+                    value={createForm.homeTeamCrest}
+                    onChange={(e) => setCreateForm({ ...createForm, homeTeamCrest: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-xs"
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium">Bandera Visitante (URL crest)</label>
+                  <input
+                    type="text"
+                    value={createForm.awayTeamCrest}
+                    onChange={(e) => setCreateForm({ ...createForm, awayTeamCrest: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-xs"
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-medium">Fecha y Hora</label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={createForm.date}
+                  onChange={(e) => setCreateForm({ ...createForm, date: e.target.value })}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <label className="font-medium">Fase</label>
+                  <select
+                    value={createForm.phase}
+                    onChange={(e) => setCreateForm({ ...createForm, phase: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  >
+                    {PHASES.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium">Jornada (1-8)</label>
+                  <select
+                    value={createForm.jornada}
+                    onChange={(e) => setCreateForm({ ...createForm, jornada: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  >
+                    {JORNADAS.map((j) => (
+                      <option key={j.id} value={j.id}>{j.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium">Grupo (Nº)</label>
+                  <input
+                    type="number"
+                    value={createForm.groupStageNumber}
+                    onChange={(e) => setCreateForm({ ...createForm, groupStageNumber: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                    placeholder="Opcional"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <label className="font-medium">Estado</label>
+                  <select
+                    value={createForm.status}
+                    onChange={(e) => setCreateForm({ ...createForm, status: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  >
+                    <option value="SCHEDULED">Programado</option>
+                    <option value="LIVE">En juego</option>
+                    <option value="FINISHED">Finalizado</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium">Goles Local</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={createForm.homeGoals}
+                    onChange={(e) => setCreateForm({ ...createForm, homeGoals: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                    placeholder="-"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium">Goles Visitante</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={createForm.awayGoals}
+                    onChange={(e) => setCreateForm({ ...createForm, awayGoals: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                    placeholder="-"
+                  />
+                </div>
+              </div>
+
+              {formError && <p className="text-xs text-destructive bg-destructive/10 p-2 rounded">{formError}</p>}
+              {formSuccess && <p className="text-xs text-emerald-500 bg-emerald-500/10 p-2 rounded">{formSuccess}</p>}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreate(false)}
+                  className="px-4 py-2 border border-input rounded-lg hover:bg-muted transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition"
+                >
+                  Crear Partido
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDITAR PARTIDO */}
+      {editingMatch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-card w-full max-w-lg rounded-2xl border border-border p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-foreground">Editar Partido</h3>
+              <button onClick={() => setEditingMatch(null)} className="text-muted-foreground hover:text-foreground">✕</button>
+            </div>
+            
+            <form onSubmit={handleEditSubmit} className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-medium">Equipo Local</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.homeTeam}
+                    onChange={(e) => setEditForm({ ...editForm, homeTeam: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium">Equipo Visitante</label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.awayTeam}
+                    onChange={(e) => setEditForm({ ...editForm, awayTeam: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="font-medium">Bandera Local (URL crest)</label>
+                  <input
+                    type="text"
+                    value={editForm.homeTeamCrest}
+                    onChange={(e) => setEditForm({ ...editForm, homeTeamCrest: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium">Bandera Visitante (URL crest)</label>
+                  <input
+                    type="text"
+                    value={editForm.awayTeamCrest}
+                    onChange={(e) => setEditForm({ ...editForm, awayTeamCrest: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-medium">Fecha y Hora</label>
+                <input
+                  type="datetime-local"
+                  required
+                  value={editForm.date}
+                  onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                  className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <label className="font-medium">Fase</label>
+                  <select
+                    value={editForm.phase}
+                    onChange={(e) => setEditForm({ ...editForm, phase: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  >
+                    {PHASES.map((p) => (
+                      <option key={p} value={p}>{p}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium">Jornada (1-8)</label>
+                  <select
+                    value={editForm.jornada}
+                    onChange={(e) => setEditForm({ ...editForm, jornada: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  >
+                    {JORNADAS.map((j) => (
+                      <option key={j.id} value={j.id}>{j.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium">Grupo (Nº)</label>
+                  <input
+                    type="number"
+                    value={editForm.groupStageNumber}
+                    onChange={(e) => setEditForm({ ...editForm, groupStageNumber: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <label className="font-medium">Estado</label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  >
+                    <option value="SCHEDULED">Programado</option>
+                    <option value="LIVE">En juego</option>
+                    <option value="FINISHED">Finalizado</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium">Goles Local</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editForm.homeGoals}
+                    onChange={(e) => setEditForm({ ...editForm, homeGoals: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-medium">Goles Visitante</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editForm.awayGoals}
+                    onChange={(e) => setEditForm({ ...editForm, awayGoals: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {formError && <p className="text-xs text-destructive bg-destructive/10 p-2 rounded">{formError}</p>}
+              {formSuccess && <p className="text-xs text-emerald-500 bg-emerald-500/10 p-2 rounded">{formSuccess}</p>}
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingMatch(null)}
+                  className="px-4 py-2 border border-input rounded-lg hover:bg-muted transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

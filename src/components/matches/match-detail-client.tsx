@@ -80,10 +80,10 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
   const { match, prediction } = data;
   const isFinished = match.status === "FINISHED";
 
-  // HU-02 y HU-03: Bloqueo de 5 minutos antes del partido
+  // Bloqueo de 3 minutos antes del partido
   const matchDate = new Date(match.date);
   const now = new Date();
-  const isLocked = match.status !== "SCHEDULED" || (matchDate.getTime() - now.getTime() < 5 * 60 * 1000);
+  const isLocked = match.status !== "SCHEDULED" || (matchDate.getTime() - now.getTime() < 3 * 60 * 1000);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,8 +117,8 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
       }
 
       setFormSuccess("¡Predicción guardada correctamente!");
-    } catch (err: any) {
-      setFormError(err.message || "Error al guardar la predicción.");
+    } catch (err: unknown) {
+      setFormError(err instanceof Error ? err.message : "Error al guardar la predicción.");
     } finally {
       setIsSubmitting(false);
     }
@@ -281,7 +281,7 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
               </div>
               
               <p className="text-[11px] text-muted-foreground text-center">
-                Puedes crear o editar tu predicción hasta 5 minutos antes de que inicie el partido.
+                Puedes crear o editar tu predicción hasta 3 minutos antes de que inicie el partido.
               </p>
             </form>
           )}

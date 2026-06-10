@@ -10,6 +10,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  USER
+  SUPER_ADMIN
+}
+
 enum MemberRole {
   ADMIN
   MEMBER
@@ -33,6 +38,7 @@ model User {
   passwordHash String
   nickGlobal   String   @unique
   avatar       String?
+  role         UserRole @default(USER)
   createdAt    DateTime @default(now())
 
   memberships          Member[]
@@ -96,6 +102,7 @@ model Match {
   date             DateTime
   phase            String
   groupStageNumber Int?
+  jornada          Int         @default(1)
   status           MatchStatus @default(SCHEDULED)
   homeGoals        Int?
   awayGoals        Int?
