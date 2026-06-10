@@ -20,6 +20,8 @@ type HistoryItem = {
     id: string;
     homeTeam: string;
     awayTeam: string;
+    homeTeamCrest?: string | null;
+    awayTeamCrest?: string | null;
     date: string;
     phase: string;
     homeGoals: number | null;
@@ -70,9 +72,25 @@ export function HistoryListClient({ groupId }: HistoryListClientProps) {
               <div>
                 <Link
                   href={`/grupos/${groupId}/partidos/${item.matchId}`}
-                  className="font-medium hover:underline"
+                  className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium hover:underline"
                 >
-                  {item.match.homeTeam} vs {item.match.awayTeam}
+                  {item.match.homeTeamCrest && (
+                    <img
+                      src={item.match.homeTeamCrest}
+                      alt={`Bandera de ${item.match.homeTeam}`}
+                      className="inline-block h-3.5 w-5 object-cover rounded-sm border border-muted/60"
+                    />
+                  )}
+                  <span>{item.match.homeTeam}</span>
+                  <span className="text-muted-foreground font-normal mx-0.5 text-sm">vs</span>
+                  {item.match.awayTeamCrest && (
+                    <img
+                      src={item.match.awayTeamCrest}
+                      alt={`Bandera de ${item.match.awayTeam}`}
+                      className="inline-block h-3.5 w-5 object-cover rounded-sm border border-muted/60"
+                    />
+                  )}
+                  <span>{item.match.awayTeam}</span>
                 </Link>
                 <p className="text-xs text-muted-foreground">
                   {item.match.phase} ·{" "}

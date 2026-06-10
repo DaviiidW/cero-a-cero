@@ -15,6 +15,8 @@ export async function GET() {
       id: true,
       homeTeam: true,
       awayTeam: true,
+      homeTeamCrest: true,
+      awayTeamCrest: true,
       date: true,
       phase: true,
       groupStageNumber: true,

@@ -15,8 +15,8 @@ export type FootballDataMatch = {
   status: FootballDataMatchStatus;
   matchday: number | null;
   stage: string;
-  homeTeam: { name: string };
-  awayTeam: { name: string };
+  homeTeam: { name: string; crest?: string | null };
+  awayTeam: { name: string; crest?: string | null };
   score: {
     fullTime: {
       home?: number | null;

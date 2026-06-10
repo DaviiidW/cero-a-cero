@@ -89,6 +89,8 @@ model Match {
   externalId       Int?        @unique
   homeTeam         String
   awayTeam         String
+  homeTeamCrest    String?
+  awayTeamCrest    String?
   date             DateTime
   phase            String
   groupStageNumber Int?

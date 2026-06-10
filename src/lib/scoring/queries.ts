@@ -66,6 +66,8 @@ export async function getUserGroupHistory(userId: string, groupId: string) {
           id: true,
           homeTeam: true,
           awayTeam: true,
+          homeTeamCrest: true,
+          awayTeamCrest: true,
           date: true,
           phase: true,
           homeGoals: true,

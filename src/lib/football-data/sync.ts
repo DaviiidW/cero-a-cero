@@ -14,6 +14,61 @@ const PHASE_LABELS: Record<string, string> = {
   LAST_32: "Dieciseisavos de final",
 };
 
+const TEAM_TRANSLATIONS: Record<string, string> = {
+  "Algeria": "Argelia",
+  "Argentina": "Argentina",
+  "Australia": "Australia",
+  "Austria": "Austria",
+  "Belgium": "Bélgica",
+  "Bosnia-Herzegovina": "Bosnia y Herzegovina",
+  "Brazil": "Brasil",
+  "Canada": "Canadá",
+  "Cape Verde Islands": "Cabo Verde",
+  "Colombia": "Colombia",
+  "Congo DR": "República Democrática del Congo",
+  "Croatia": "Croacia",
+  "Curaçao": "Curazao",
+  "Czechia": "República Checa",
+  "Ecuador": "Ecuador",
+  "Egypt": "Egipto",
+  "England": "Inglaterra",
+  "France": "Francia",
+  "Germany": "Alemania",
+  "Ghana": "Ghana",
+  "Haiti": "Haití",
+  "Iran": "Irán",
+  "Iraq": "Irak",
+  "Ivory Coast": "Costa de Marfil",
+  "Japan": "Japón",
+  "Jordan": "Jordania",
+  "Mexico": "México",
+  "Morocco": "Marruecos",
+  "Netherlands": "Países Bajos",
+  "New Zealand": "Nueva Zelanda",
+  "Norway": "Noruega",
+  "Panama": "Panamá",
+  "Paraguay": "Paraguay",
+  "Portugal": "Portugal",
+  "Qatar": "Catar",
+  "Saudi Arabia": "Arabia Saudita",
+  "Scotland": "Escocia",
+  "Senegal": "Senegal",
+  "South Africa": "Sudáfrica",
+  "South Korea": "Corea del Sur",
+  "Spain": "España",
+  "Sweden": "Suecia",
+  "Switzerland": "Suiza",
+  "Tunisia": "Túnez",
+  "Turkey": "Turquía",
+  "United States": "Estados Unidos",
+  "Uruguay": "Uruguay",
+  "Uzbekistan": "Uzbekistán",
+};
+
+function translateTeamName(name: string): string {
+  return TEAM_TRANSLATIONS[name] ?? name;
+}
+
 function mapStatus(status: FootballDataMatch["status"]): MatchStatus {
   switch (status) {
     case "LIVE":
@@ -52,8 +107,10 @@ export async function syncMatchesFromFootballData() {
     const { homeGoals, awayGoals } = getNinetyMinuteScore(apiMatch);
     const status = mapStatus(apiMatch.status);
     const data = {
-      homeTeam: apiMatch.homeTeam?.name || "Por definir",
-      awayTeam: apiMatch.awayTeam?.name || "Por definir",
+      homeTeam: apiMatch.homeTeam?.name ? translateTeamName(apiMatch.homeTeam.name) : "Por definir",
+      awayTeam: apiMatch.awayTeam?.name ? translateTeamName(apiMatch.awayTeam.name) : "Por definir",
+      homeTeamCrest: apiMatch.homeTeam?.crest || null,
+      awayTeamCrest: apiMatch.awayTeam?.crest || null,
       date: new Date(apiMatch.utcDate),
       phase: mapPhase(apiMatch.stage),
       groupStageNumber:

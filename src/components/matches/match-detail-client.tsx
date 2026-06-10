@@ -14,6 +14,8 @@ type MatchDetailResponse = {
     id: string;
     homeTeam: string;
     awayTeam: string;
+    homeTeamCrest?: string | null;
+    awayTeamCrest?: string | null;
     date: string;
     phase: string;
     groupStageNumber: number | null;
@@ -57,13 +59,59 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
 
   return (
     <div className="space-y-6 rounded-2xl border border-border bg-card p-6">
-      <div className="space-y-1 text-center">
-        <p className="text-sm text-muted-foreground">{match.phase}</p>
-        <h2 className="text-2xl font-semibold">
-          {match.homeTeam} vs {match.awayTeam}
-        </h2>
+      <div className="space-y-4 text-center">
+        <p className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+          {match.phase} {match.groupStageNumber ? `· Jornada ${match.groupStageNumber}` : ""}
+        </p>
+        
+        <div className="flex items-center justify-center gap-4 py-2">
+          {/* Home Team */}
+          <div className="flex flex-col items-center gap-2 flex-1 text-center">
+            {match.homeTeamCrest ? (
+              <img
+                src={match.homeTeamCrest}
+                alt={`Escudo de ${match.homeTeam}`}
+                className="h-12 w-18 md:h-16 md:w-24 object-contain rounded-lg border border-muted/80 shadow-sm"
+              />
+            ) : (
+              <div className="h-12 w-18 md:h-16 md:w-24 rounded-lg border border-dashed border-muted flex items-center justify-center text-xs text-muted-foreground bg-muted/20">
+                ?
+              </div>
+            )}
+            <span className="text-base font-bold tracking-tight md:text-lg">{match.homeTeam}</span>
+          </div>
+
+          {/* VS Divider */}
+          <div className="text-xs text-muted-foreground font-semibold px-2.5 py-1 bg-muted rounded-md select-none shrink-0">
+            VS
+          </div>
+
+          {/* Away Team */}
+          <div className="flex flex-col items-center gap-2 flex-1 text-center">
+            {match.awayTeamCrest ? (
+              <img
+                src={match.awayTeamCrest}
+                alt={`Escudo de ${match.awayTeam}`}
+                className="h-12 w-18 md:h-16 md:w-24 object-contain rounded-lg border border-muted/80 shadow-sm"
+              />
+            ) : (
+              <div className="h-12 w-18 md:h-16 md:w-24 rounded-lg border border-dashed border-muted flex items-center justify-center text-xs text-muted-foreground bg-muted/20">
+                ?
+              </div>
+            )}
+            <span className="text-base font-bold tracking-tight md:text-lg">{match.awayTeam}</span>
+          </div>
+        </div>
+
         <p className="text-sm text-muted-foreground">
-          {new Date(match.date).toLocaleString("es-ES")}
+          {new Date(match.date).toLocaleString("es-ES", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </p>
       </div>
 

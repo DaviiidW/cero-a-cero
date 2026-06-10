@@ -12,6 +12,8 @@ type MatchItem = {
   id: string;
   homeTeam: string;
   awayTeam: string;
+  homeTeamCrest?: string | null;
+  awayTeamCrest?: string | null;
   date: string;
   phase: string;
   groupStageNumber: number | null;
@@ -75,9 +77,25 @@ export function MatchesListClient({ groupId }: MatchesListClientProps) {
               className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 hover:bg-muted/40"
             >
               <div className="min-w-0">
-                <p className="font-medium">
-                  {match.homeTeam} vs {match.awayTeam}
-                </p>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
+                  {match.homeTeamCrest && (
+                    <img
+                      src={match.homeTeamCrest}
+                      alt={`Bandera de ${match.homeTeam}`}
+                      className="inline-block h-3.5 w-5 object-cover rounded-sm border border-muted/60"
+                    />
+                  )}
+                  <span>{match.homeTeam}</span>
+                  <span className="text-muted-foreground font-normal mx-0.5 text-sm">vs</span>
+                  {match.awayTeamCrest && (
+                    <img
+                      src={match.awayTeamCrest}
+                      alt={`Bandera de ${match.awayTeam}`}
+                      className="inline-block h-3.5 w-5 object-cover rounded-sm border border-muted/60"
+                    />
+                  )}
+                  <span>{match.awayTeam}</span>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {match.phase}
                   {match.groupStageNumber
