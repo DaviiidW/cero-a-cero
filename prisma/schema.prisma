@@ -40,6 +40,7 @@ model User {
   points               Points[]
   adminGroups          Group[]              @relation("GroupAdmin")
   passwordResetTokens  PasswordResetToken[]
+  predictionHistories  PredictionHistory[]
 }
 
 model PasswordResetToken {
@@ -65,9 +66,10 @@ model Group {
   adminId          String
 
   admin       User         @relation("GroupAdmin", fields: [adminId], references: [id])
-  members     Member[]
-  predictions Prediction[]
-  points      Points[]
+  members             Member[]
+  predictions         Prediction[]
+  points              Points[]
+  predictionHistories PredictionHistory[]
 }
 
 model Member {
@@ -98,7 +100,8 @@ model Match {
   homeGoals        Int?
   awayGoals        Int?
 
-  predictions Prediction[]
+  predictions         Prediction[]
+  predictionHistories PredictionHistory[]
 
   @@index([status])
   @@index([date])
@@ -133,4 +136,20 @@ model Points {
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@id([userId, groupId])
+}
+
+model PredictionHistory {
+  id                  String   @id @default(cuid())
+  predictionId        String
+  userId              String
+  matchId             String
+  groupId             String
+  predictionHomeGoals Int
+  predictionAwayGoals Int
+  action              String   // "CREATE" | "UPDATE"
+  createdAt           DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
 }

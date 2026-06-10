@@ -57,8 +57,9 @@ export async function getUserGroupHistory(userId: string, groupId: string) {
     where: {
       userId,
       groupId,
-      scoredAt: { not: null },
-      match: { status: MatchStatus.FINISHED },
+      match: {
+        status: { in: [MatchStatus.LIVE, MatchStatus.FINISHED] },
+      },
     },
     include: {
       match: {

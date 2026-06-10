@@ -15,7 +15,7 @@ type HistoryItem = {
   predictionHomeGoals: number;
   predictionAwayGoals: number;
   resultType: ResultTypeLabel;
-  pointsEarned: number;
+  pointsEarned: number | null;
   match: {
     id: string;
     homeTeam: string;
@@ -109,9 +109,17 @@ export function HistoryListClient({ groupId }: HistoryListClientProps) {
                   {formatScore(item.match.homeGoals, item.match.awayGoals)}
                 </p>
               </div>
-              <div className="text-right">
-                <p className="text-lg font-semibold">+{item.pointsEarned}</p>
-                <p className="text-xs text-muted-foreground">puntos</p>
+              <div className="text-right shrink-0">
+                {item.pointsEarned !== null ? (
+                  <>
+                    <p className="text-lg font-semibold text-emerald-500">+{item.pointsEarned}</p>
+                    <p className="text-xs text-muted-foreground">puntos</p>
+                  </>
+                ) : (
+                  <span className="inline-block text-xs font-semibold px-2.5 py-1 bg-amber-500/10 text-amber-500 rounded-md">
+                    En juego
+                  </span>
+                )}
               </div>
             </div>
           </li>
