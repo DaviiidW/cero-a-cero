@@ -3,16 +3,17 @@ import { LoginForm } from "@/components/auth/login-form";
 import { getSession } from "@/lib/auth-session";
 
 type LoginPageProps = {
-  searchParams: Promise<{ reset?: string }>;
+  searchParams: Promise<{ reset?: string; callbackUrl?: string }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const params = await searchParams;
+  const callbackUrl = params.callbackUrl ?? "/";
+
   const session = await getSession();
   if (session) {
-    redirect("/");
+    redirect(callbackUrl);
   }
-
-  const params = await searchParams;
 
   return (
     <>
@@ -21,7 +22,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           Contraseña actualizada. Ya puedes iniciar sesión.
         </div>
       ) : null}
-      <LoginForm />
+      <LoginForm callbackUrl={callbackUrl} />
     </>
   );
 }

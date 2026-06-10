@@ -56,12 +56,13 @@ model PasswordResetToken {
 }
 
 model Group {
-  id         String   @id @default(cuid())
-  name       String
-  image      String?
-  inviteCode String   @unique
-  createdAt  DateTime @default(now())
-  adminId    String
+  id               String   @id @default(cuid())
+  name             String
+  image            String?
+  inviteCode       String   @unique
+  inviteExpiresAt  DateTime
+  createdAt        DateTime @default(now())
+  adminId          String
 
   admin       User         @relation("GroupAdmin", fields: [adminId], references: [id])
   members     Member[]
