@@ -3,6 +3,15 @@
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
 import { Shield, Bell, Moon, Sun, Trash2, User as UserIcon } from "lucide-react";
 
@@ -95,66 +104,74 @@ export function ProfileClient({ user }: ProfileClientProps) {
     <div className="space-y-6">
       
       {/* Header Info */}
-      <div className="bg-card p-6 rounded-2xl border border-border shadow-sm flex flex-col sm:flex-row items-center gap-5">
-        <div className="relative group select-none">
-          <div className="size-20 rounded-2xl bg-muted border border-border flex items-center justify-center text-4xl shadow-inner relative overflow-hidden">
-            {currentAvatar}
-          </div>
-          {isUpdatingAvatar && (
-            <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center text-xs text-white">
-              ...
+      <Card className="border-border shadow-sm">
+        <CardContent className="p-6 flex flex-col sm:flex-row items-center gap-5">
+          <div className="relative group select-none">
+            <div className="size-20 rounded-2xl bg-muted border border-border flex items-center justify-center text-4xl shadow-inner relative overflow-hidden">
+              {currentAvatar}
             </div>
-          )}
-        </div>
-        <div className="text-center sm:text-left space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{user.nickGlobal}</h1>
-          <p className="text-sm text-muted-foreground">{user.email}</p>
-          <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-0.5 rounded border border-accent/20">
-            Usuario Registrado
-          </span>
-        </div>
-      </div>
+            {isUpdatingAvatar && (
+              <div className="absolute inset-0 bg-black/40 rounded-2xl flex items-center justify-center text-xs text-white">
+                ...
+              </div>
+            )}
+          </div>
+          <div className="text-center sm:text-left space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">{user.nickGlobal}</h1>
+            <p className="text-sm text-muted-foreground">{user.email}</p>
+            <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-0.5 rounded border border-accent/20">
+              Usuario Registrado
+            </span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Grid of avatars */}
-      <div className="bg-card p-6 rounded-2xl border border-border shadow-sm space-y-3">
-        <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-          <UserIcon className="size-4 text-primary" />
-          Selecciona tu Avatar
-        </h2>
-        <div className="flex flex-wrap gap-2.5">
-          {AVAILABLE_AVATARS.map((avatar) => (
-            <button
-              key={avatar}
-              disabled={isUpdatingAvatar}
-              onClick={() => handleAvatarSelect(avatar)}
-              className={`size-11 text-2xl flex items-center justify-center rounded-xl border transition-all active:scale-95 ${
-                currentAvatar === avatar
-                  ? "border-primary bg-primary/10 shadow-sm"
-                  : "border-border hover:bg-muted"
-              }`}
-            >
-              {avatar}
-            </button>
-          ))}
-        </div>
-      </div>
+      <Card className="border-border shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+            <UserIcon className="size-4 text-primary" />
+            Selecciona tu Avatar
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2.5">
+            {AVAILABLE_AVATARS.map((avatar) => (
+              <button
+                key={avatar}
+                disabled={isUpdatingAvatar}
+                onClick={() => handleAvatarSelect(avatar)}
+                className={`size-11 text-2xl flex items-center justify-center rounded-xl border transition-all active:scale-95 cursor-pointer ${
+                  currentAvatar === avatar
+                    ? "border-primary bg-primary/10 shadow-sm"
+                    : "border-border hover:bg-muted"
+                }`}
+              >
+                {avatar}
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Visual & Notification Preferences (HU-10, HU-11) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
         {/* Theme Preferences */}
-        <div className="bg-card p-5 rounded-2xl border border-border shadow-sm space-y-4">
-          <div className="space-y-0.5">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+        <Card className="border-border shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
               <Moon className="size-4 text-accent" />
               Preferencias Visuales
-            </h3>
-            <p className="text-[11px] text-muted-foreground">Adapta la apariencia de la aplicación a tus gustos</p>
-          </div>
-          <div className="flex items-center gap-2 pt-1">
+            </CardTitle>
+            <CardDescription className="text-[11px]">
+              Adapta la apariencia de la aplicación a tus gustos
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center gap-2 pt-1">
             <button
               onClick={() => handleThemeChange("light")}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-2 ${
+              className={`flex-1 py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-2 cursor-pointer ${
                 theme === "light"
                   ? "bg-primary/10 text-primary border-primary/20"
                   : "border-border hover:bg-muted text-muted-foreground"
@@ -165,7 +182,7 @@ export function ProfileClient({ user }: ProfileClientProps) {
             </button>
             <button
               onClick={() => handleThemeChange("dark")}
-              className={`flex-1 py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-2 ${
+              className={`flex-1 py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-2 cursor-pointer ${
                 theme === "dark"
                   ? "bg-primary/10 text-primary border-primary/20"
                   : "border-border hover:bg-muted text-muted-foreground"
@@ -174,23 +191,25 @@ export function ProfileClient({ user }: ProfileClientProps) {
               <Moon className="size-3.5" />
               Modo Oscuro
             </button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* Notification Preferences */}
-        <div className="bg-card p-5 rounded-2xl border border-border shadow-sm space-y-4">
-          <div className="space-y-0.5">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+        <Card className="border-border shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
               <Bell className="size-4 text-primary" />
               Avisos y Notificaciones
-            </h3>
-            <p className="text-[11px] text-muted-foreground">Recibe alertas sobre marcadores y cierres de jornadas</p>
-          </div>
-          <div className="flex items-center justify-between pt-1">
+            </CardTitle>
+            <CardDescription className="text-[11px]">
+              Recibe alertas sobre marcadores y cierres de jornadas
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between pt-1">
             <span className="text-xs text-muted-foreground font-semibold">Notificaciones de resultados</span>
             <button
               onClick={() => handleNotificationsChange(!notifications)}
-              className={`w-12 h-6 rounded-full transition-all relative ${
+              className={`w-12 h-6 rounded-full transition-all relative cursor-pointer ${
                 notifications ? "bg-primary" : "bg-muted border border-border"
               }`}
             >
@@ -198,76 +217,87 @@ export function ProfileClient({ user }: ProfileClientProps) {
                 notifications ? "translate-x-6" : ""
               }`} />
             </button>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
       </div>
 
       {/* Change Password Form */}
-      <div className="bg-card p-6 rounded-2xl border border-border shadow-sm space-y-4">
-        <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-          <Shield className="size-4 text-accent" />
-          Seguridad de la Cuenta
-        </h2>
-        <ChangePasswordForm />
-      </div>
+      <Card className="border-border shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Shield className="size-4 text-accent" />
+            Seguridad de la Cuenta
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChangePasswordForm />
+        </CardContent>
+      </Card>
 
       {/* Delete Account */}
-      <div className="bg-card p-6 rounded-2xl border border-destructive/20 bg-destructive/5 shadow-sm space-y-4">
-        <div className="space-y-1">
-          <h2 className="text-sm font-bold text-destructive flex items-center gap-2">
+      <Card className="border-destructive/20 bg-destructive/5 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-bold text-destructive flex items-center gap-2">
             <Trash2 className="size-4" />
             Zona de Peligro
-          </h2>
-          <p className="text-xs text-muted-foreground">
+          </CardTitle>
+          <CardDescription className="text-xs text-muted-foreground">
             Elimina tu cuenta y todos tus datos asociados de forma permanente
-          </p>
-        </div>
-        <Button
-          variant="destructive"
-          onClick={() => setShowDeleteModal(true)}
-          className="text-xs font-semibold bg-destructive hover:bg-destructive/90 text-white"
-        >
-          Eliminar Cuenta
-        </Button>
-      </div>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant="destructive"
+            onClick={() => setShowDeleteModal(true)}
+            className="text-xs font-semibold bg-destructive hover:bg-destructive/90 text-white"
+          >
+            Eliminar Cuenta
+          </Button>
+        </CardContent>
+      </Card>
 
-      {/* Delete Account Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
-          <div className="bg-card w-full max-w-md rounded-2xl border border-border p-6 shadow-xl space-y-4">
-            <h3 className="text-lg font-bold text-destructive flex items-center gap-2">
+      {/* Delete Account Confirmation Modal using new Dialog primitive */}
+      <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
               <Trash2 className="size-5" />
               ¿Eliminar tu cuenta permanentemente?
-            </h3>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            </DialogTitle>
+            <DialogDescription>
               Esta acción es completamente irreversible. Se eliminará tu perfil, todos tus pronósticos realizados, tus puntos acumulados, y si eres administrador de algún grupo, dicho grupo y todos sus miembros también se eliminarán.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteError && (
+            <p className="text-xs text-destructive bg-destructive/10 p-2.5 rounded-lg border border-destructive/20 font-medium">
+              {deleteError}
             </p>
-            {deleteError && (
-              <p className="text-xs text-destructive bg-destructive/10 p-2.5 rounded-lg border border-destructive/20 font-medium">
-                {deleteError}
-              </p>
-            )}
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                disabled={isDeleting}
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 text-xs font-bold border border-input rounded-xl hover:bg-muted transition"
-              >
-                Cancelar
-              </button>
-              <button
-                disabled={isDeleting}
-                onClick={handleDeleteAccount}
-                className="px-4 py-2 text-xs font-bold bg-destructive text-white rounded-xl hover:bg-destructive/90 transition flex items-center gap-1.5"
-              >
-                {isDeleting ? "Eliminando..." : "Sí, eliminar cuenta"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={isDeleting}
+              onClick={() => setShowDeleteModal(false)}
+              className="text-xs font-semibold"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={handleDeleteAccount}
+              className="text-xs font-semibold bg-destructive hover:bg-destructive/90 text-white flex items-center gap-1.5"
+            >
+              {isDeleting ? "Eliminando..." : "Sí, eliminar cuenta"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
 }
+

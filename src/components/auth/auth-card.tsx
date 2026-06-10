@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 
 type AuthCardProps = {
   title: string;
@@ -10,9 +11,9 @@ type AuthCardProps = {
 
 export function AuthCard({ title, description, children, footer }: AuthCardProps) {
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md space-y-6 rounded-2xl border border-border bg-card p-8 shadow-sm">
-        <div className="flex flex-col items-center gap-4 text-center">
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8">
+      <Card className="w-full max-w-md border-border shadow-sm">
+        <CardHeader className="flex flex-col items-center gap-4 text-center pb-4 select-none">
           <Link href="/">
             <Image
               src="/logo_0-0nobg.png"
@@ -24,15 +25,21 @@ export function AuthCard({ title, description, children, footer }: AuthCardProps
             />
           </Link>
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-            {description ? (
-              <p className="text-sm text-muted-foreground">{description}</p>
-            ) : null}
+            <CardTitle className="text-2xl font-bold tracking-tight text-foreground">{title}</CardTitle>
+            {description && (
+              <CardDescription className="text-xs text-muted-foreground">{description}</CardDescription>
+            )}
           </div>
-        </div>
-        {children}
-        {footer ? <div className="text-center text-sm">{footer}</div> : null}
-      </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {children}
+        </CardContent>
+        {footer && (
+          <CardFooter className="flex justify-center border-t border-border/40 pt-4 text-xs">
+            {footer}
+          </CardFooter>
+        )}
+      </Card>
     </div>
   );
 }

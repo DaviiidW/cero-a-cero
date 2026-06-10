@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 
 type RankingRow = {
   userId: string;
@@ -27,37 +29,54 @@ export function RankingTable({
   }
 
   return (
-    <ol className="divide-y divide-border rounded-2xl border border-border bg-card">
-      {rows.map((row) => {
-        const isSelf = row.userId === highlightUserId;
-        
-        return (
-          <li
-            key={row.userId}
-            className={`flex items-center justify-between px-4 py-3.5 transition hover:bg-muted/10 ${
-              isSelf ? "bg-primary/5 border-l-4 border-l-primary" : ""
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <span className="w-8 text-xs font-bold text-muted-foreground select-none">#{row.position}</span>
-              {isSelf ? (
-                <span className="font-semibold text-foreground flex items-center gap-1.5">
-                  {row.nick}
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-1.5 py-0.5 rounded">Tú</span>
-                </span>
-              ) : (
-                <Link
-                  href={`/perfil/${row.userId}`}
-                  className="font-medium text-foreground hover:text-primary hover:underline transition"
-                >
-                  {row.nick}
-                </Link>
-              )}
-            </div>
-            <span className="font-bold text-sm text-foreground">{row.points} pts</span>
-          </li>
-        );
-      })}
-    </ol>
+    <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/30 hover:bg-muted/30 border-b border-border select-none">
+            <TableHead className="w-16 text-center font-bold text-xs uppercase tracking-wider text-muted-foreground">Pos</TableHead>
+            <TableHead className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Miembro</TableHead>
+            <TableHead className="w-24 text-right font-bold text-xs uppercase tracking-wider text-muted-foreground">Puntos</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row) => {
+            const isSelf = row.userId === highlightUserId;
+
+            return (
+              <TableRow
+                key={row.userId}
+                className={`transition hover:bg-muted/10 border-b border-border/60 ${
+                  isSelf ? "bg-primary/5 hover:bg-primary/10" : ""
+                }`}
+              >
+                <TableCell className="text-center font-black text-xs text-muted-foreground select-none">
+                  #{row.position}
+                </TableCell>
+                <TableCell className="py-3.5">
+                  {isSelf ? (
+                    <span className="font-semibold text-foreground flex items-center gap-2">
+                      {row.nick}
+                      <Badge variant="emerald" className="text-[8px] font-extrabold uppercase py-0 px-1 rounded select-none">
+                        Tú
+                      </Badge>
+                    </span>
+                  ) : (
+                    <Link
+                      href={`/perfil/${row.userId}`}
+                      className="font-medium text-foreground hover:text-primary hover:underline transition"
+                    >
+                      {row.nick}
+                    </Link>
+                  )}
+                </TableCell>
+                <TableCell className="text-right font-bold text-foreground">
+                  {row.points} pts
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
   );
 }

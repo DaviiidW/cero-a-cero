@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useGroup } from "@/components/providers/group-provider";
 import { GroupRankingClient } from "@/components/ranking/group-ranking-client";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Trophy, Users, PlusCircle, ArrowRight, Shield } from "lucide-react";
 
 type DashboardClientProps = {
@@ -34,20 +36,22 @@ export function DashboardClient({ currentUserId }: DashboardClientProps) {
             Para empezar a pronosticar los partidos del Mundial 2026 y competir en la porra, necesitas unirte o crear un grupo con tus amigos.
           </p>
         </div>
-        <div className="bg-card p-6 rounded-2xl border border-border shadow-sm space-y-3">
-          <Button asChild className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-            <Link href="/grupos/nuevo" className="flex items-center justify-center gap-2 font-bold">
-              <PlusCircle className="size-4" />
-              Crear un nuevo grupo
-            </Link>
-          </Button>
-          <Button asChild variant="outline" className="w-full">
-            <Link href="/grupos/unirse" className="flex items-center justify-center gap-2 font-bold">
-              <Users className="size-4" />
-              Unirse a un grupo existente
-            </Link>
-          </Button>
-        </div>
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-6 space-y-3">
+            <Button asChild className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+              <Link href="/grupos/nuevo" className="flex items-center justify-center gap-2 font-bold">
+                <PlusCircle className="size-4" />
+                Crear un nuevo grupo
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/grupos/unirse" className="flex items-center justify-center gap-2 font-bold">
+                <Users className="size-4" />
+                Unirse a un grupo existente
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -56,36 +60,38 @@ export function DashboardClient({ currentUserId }: DashboardClientProps) {
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
       {selectedGroup && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card p-5 rounded-2xl border border-border shadow-sm">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-accent uppercase tracking-wider flex items-center gap-1">
-                <Shield className="size-3" />
-                Grupo Activo
-              </span>
+        <Card className="border-border shadow-sm">
+          <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Badge variant="gold" className="text-[9px] uppercase tracking-wider font-bold py-0.5 px-2">
+                  <Shield className="size-3 mr-1 inline" />
+                  Grupo Activo
+                </Badge>
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">{selectedGroup.name}</h1>
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                <span>Código de invitación:</span>
+                <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono text-[11px] font-semibold">
+                  {selectedGroup.inviteCode}
+                </code>
+              </p>
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">{selectedGroup.name}</h1>
-            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-              <span>Código de invitación:</span>
-              <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono text-[11px] font-semibold">
-                {selectedGroup.inviteCode}
-              </code>
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button asChild size="sm" variant="outline" className="text-xs font-semibold">
-              <Link href={`/grupos/${selectedGroup.id}`}>
-                Gestionar Grupo
-              </Link>
-            </Button>
-            <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold">
-              <Link href="/calendario" className="flex items-center gap-1">
-                Pronosticar Partidos
-                <ArrowRight className="size-3" />
-              </Link>
-            </Button>
-          </div>
-        </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button asChild size="sm" variant="outline" className="text-xs font-semibold">
+                <Link href={`/grupos/${selectedGroup.id}`}>
+                  Gestionar Grupo
+                </Link>
+              </Button>
+              <Button asChild size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-bold">
+                <Link href="/calendario" className="flex items-center gap-1">
+                  Pronosticar Partidos
+                  <ArrowRight className="size-3" />
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {selectedGroupId ? (
