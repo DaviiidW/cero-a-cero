@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatScore } from "@/lib/scoring/labels";
+import { formatUTCtoMadridTime } from "@/lib/date-timezone";
 
 type Match = {
   id: string;
@@ -228,7 +229,7 @@ export function AdminDashboardClient() {
 
   const handleEditClick = (match: Match) => {
     // Formatter for datetime-local input (YYYY-MM-DDTHH:mm)
-    const formattedDate = new Date(match.date).toISOString().slice(0, 16);
+    const formattedDate = formatUTCtoMadridTime(match.date);
 
     setEditingMatch(match);
     setEditForm({
