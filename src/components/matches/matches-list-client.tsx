@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { usePolling } from "@/hooks/use-polling";
-import { formatScore } from "@/lib/scoring/labels";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -109,7 +109,9 @@ export function MatchesListClient({ groupId }: MatchesListClientProps) {
     <div className="space-y-4">
       <ul className="space-y-2.5">
         {matches.map((match) => {
-          const isLive = match.status === "LIVE";
+          const matchDate = new Date(match.date);
+          const now = new Date();
+          const isLive = match.status === "LIVE" || (match.status === "SCHEDULED" && now >= matchDate);
           const isFinished = match.status === "FINISHED";
           
           return (
@@ -162,9 +164,11 @@ export function MatchesListClient({ groupId }: MatchesListClientProps) {
                     
                     <div className="flex flex-col items-end gap-1.5 shrink-0">
                       <span className={`text-base font-extrabold tracking-tight ${isLive ? "text-red-500" : isFinished ? "text-foreground/90" : "text-muted-foreground"}`}>
-                        {formatScore(match.homeGoals, match.awayGoals)}
+                        {isLive || isFinished
+                          ? `${match.homeGoals ?? 0} - ${match.awayGoals ?? 0}`
+                          : "—"}
                       </span>
-                      {getStatusBadge(match.status)}
+                      {getStatusBadge(isLive ? "LIVE" : match.status)}
                     </div>
                   </Link>
                 </CardContent>

@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 import { getSession } from "@/lib/auth-session";
 import { db } from "@/lib/db";
-import { formatScore, formatResultType } from "@/lib/scoring/labels";
+import { formatResultType } from "@/lib/scoring/labels";
 import { Trophy, Shield, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -206,7 +206,9 @@ export default async function OtroPerfilPage({ params }: PageProps) {
                         <div className="space-y-0.5">
                           <span className="text-muted-foreground text-[10px] font-medium block">Marcador Real</span>
                           <span className="text-foreground font-bold">
-                            {formatScore(pred.match.homeGoals, pred.match.awayGoals)}
+                            {pred.match.status === "LIVE" || pred.match.status === "FINISHED" || (pred.match.status === "SCHEDULED" && new Date() >= new Date(pred.match.date))
+                              ? `${pred.match.homeGoals ?? 0} - ${pred.match.awayGoals ?? 0}`
+                              : "—"}
                           </span>
                         </div>
                       </div>

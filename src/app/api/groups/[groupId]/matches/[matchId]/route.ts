@@ -40,8 +40,10 @@ export async function GET(_request: Request, context: RouteContext) {
     },
   });
 
-  // HU-05 y HU-07: Si el partido está "LIVE" o "FINISHED", mostramos las predicciones del grupo
-  const isVisibleForGroup = match.status === "LIVE" || match.status === "FINISHED";
+  // HU-05 y HU-07: Si el partido está "LIVE", "FINISHED" o ya está bloqueado (menos de 3 minutos para el inicio), mostramos las predicciones del grupo
+  const now = new Date();
+  const lockTime = new Date(match.date.getTime() - 3 * 60 * 1000);
+  const isVisibleForGroup = match.status === "LIVE" || match.status === "FINISHED" || now >= lockTime;
   let formattedGroupPredictions: {
     userId: string;
     nick: string;

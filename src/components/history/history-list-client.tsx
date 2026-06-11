@@ -4,11 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { usePolling } from "@/hooks/use-polling";
-import { formatResultType, formatScore } from "@/lib/scoring/labels";
+import { formatResultType } from "@/lib/scoring/labels";
 import type { ResultTypeLabel } from "@/lib/scoring/labels";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ListTodo, CheckCircle2, Clock } from "lucide-react";
 
 type HistoryListClientProps = {
@@ -199,8 +198,10 @@ export function HistoryListClient({ groupId }: HistoryListClientProps) {
         ) : (
           <ul className="space-y-3">
             {pendingMatches.map((match) => {
-              const isLive = match.status === "LIVE";
-              const isLocked = match.status !== "SCHEDULED" || (new Date(match.date).getTime() - new Date().getTime() < 3 * 60 * 1000);
+              const matchDate = new Date(match.date);
+              const now = new Date();
+              const isLive = match.status === "LIVE" || (match.status === "SCHEDULED" && now >= matchDate);
+              const isLocked = match.status !== "SCHEDULED" || (matchDate.getTime() - now.getTime() < 3 * 60 * 1000);
               
               return (
                 <li key={match.id}>
@@ -209,84 +210,86 @@ export function HistoryListClient({ groupId }: HistoryListClientProps) {
                       ? "border-red-500/40 bg-red-500/5 shadow-sm shadow-red-500/5" 
                       : "border-dashed border-border/80 bg-card/40"
                   }`}>
-                    <CardContent className="p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-4">
-                        
-                        {/* Detalles del partido */}
-                        <div className="min-w-0 flex-1 space-y-2">
-                          <Link
-                            href={`/grupos/${groupId}/partidos/${match.id}?from=predicciones`}
-                            className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm font-bold text-foreground hover:text-primary transition"
-                            onClick={handleLinkClick}
-                          >
-                            {match.homeTeamCrest && (
-                              <img
-                                src={match.homeTeamCrest}
-                                alt={`Bandera de ${match.homeTeam}`}
-                                className="inline-block h-3.5 w-5 object-cover rounded-sm border border-muted/50"
-                              />
-                            )}
-                            <span>{match.homeTeam}</span>
-                            <span className="text-muted-foreground font-normal text-xs select-none">vs</span>
-                            {match.awayTeamCrest && (
-                              <img
-                                src={match.awayTeamCrest}
-                                alt={`Bandera de ${match.awayTeam}`}
-                                className="inline-block h-3.5 w-5 object-cover rounded-sm border border-muted/50"
-                              />
-                            )}
-                            <span>{match.awayTeam}</span>
-                          </Link>
+                    <CardContent className="p-0">
+                      <Link
+                        href={`/grupos/${groupId}/partidos/${match.id}?from=predicciones`}
+                        className="block p-4"
+                        onClick={handleLinkClick}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-4">
                           
-                          {/* Detalles meta */}
-                          <p className="text-[10px] text-muted-foreground font-medium">
-                            <span className="text-accent font-semibold">{match.phase}</span>
-                            {match.groupStageNumber ? ` · Jornada ${match.groupStageNumber}` : ""}
-                            {" · "}
-                            {new Date(match.date).toLocaleString("es-ES", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            })}
-                          </p>
-    
-                          {/* Predicción vs Real */}
-                          <div className="grid grid-cols-2 gap-4 border-t border-border/40 pt-2 text-[11px] font-semibold">
-                            <div className="space-y-0.5">
-                              <span className="text-muted-foreground text-[10px] font-medium block">Tu Predicción</span>
-                              <span className="text-muted-foreground italic text-xs">
-                                {isLocked ? "No pronosticado (Cerrado)" : "Sin pronóstico"}
-                              </span>
+                          {/* Detalles del partido */}
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm font-bold text-foreground">
+                              {match.homeTeamCrest && (
+                                <img
+                                  src={match.homeTeamCrest}
+                                  alt={`Bandera de ${match.homeTeam}`}
+                                  className="inline-block h-3.5 w-5 object-cover rounded-sm border border-muted/50"
+                                />
+                              )}
+                              <span>{match.homeTeam}</span>
+                              <span className="text-muted-foreground font-normal text-xs select-none">vs</span>
+                              {match.awayTeamCrest && (
+                                <img
+                                  src={match.awayTeamCrest}
+                                  alt={`Bandera de ${match.awayTeam}`}
+                                  className="inline-block h-3.5 w-5 object-cover rounded-sm border border-muted/50"
+                                />
+                              )}
+                              <span>{match.awayTeam}</span>
                             </div>
-                            <div className="space-y-0.5">
-                              <span className="text-muted-foreground text-[10px] font-medium block">Marcador Real</span>
-                              <span className="text-foreground font-bold">
-                                {formatScore(match.homeGoals, match.awayGoals)}
-                              </span>
+                            
+                            {/* Detalles meta */}
+                            <p className="text-[10px] text-muted-foreground font-medium">
+                              <span className="text-accent font-semibold">{match.phase}</span>
+                              {match.groupStageNumber ? ` · Jornada ${match.groupStageNumber}` : ""}
+                              {" · "}
+                              {new Date(match.date).toLocaleString("es-ES", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })}
+                            </p>
+      
+                            {/* Predicción vs Real */}
+                            <div className="grid grid-cols-2 gap-4 border-t border-border/40 pt-2 text-[11px] font-semibold">
+                              <div className="space-y-0.5">
+                                <span className="text-muted-foreground text-[10px] font-medium block">Tu Predicción</span>
+                                <span className="text-muted-foreground italic text-xs">
+                                  {isLocked ? "No pronosticado (Cerrado)" : "Sin pronóstico"}
+                                </span>
+                              </div>
+                              <div className="space-y-0.5">
+                                <span className="text-muted-foreground text-[10px] font-medium block">Marcador Real</span>
+                                <span className="text-foreground font-bold">
+                                  {isLive || match.status === "FINISHED"
+                                    ? `${match.homeGoals ?? 0} - ${match.awayGoals ?? 0}`
+                                    : "—"}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-    
-                        {/* Estado o botón de acción */}
-                        <div className="text-right shrink-0 select-none">
-                          {isLocked ? (
-                            <Badge 
-                              variant="secondary" 
-                              className="text-[10px] font-bold uppercase tracking-wider py-0.5 px-2.5 bg-muted text-muted-foreground border border-border rounded-lg"
-                            >
-                              Cerrado
-                            </Badge>
-                          ) : (
-                            <Button asChild size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-xs rounded-xl shadow-sm" onClick={handleLinkClick}>
-                              <Link href={`/grupos/${groupId}/partidos/${match.id}?from=predicciones`}>
+      
+                          {/* Estado o botón de acción */}
+                          <div className="text-right shrink-0 select-none">
+                            {isLocked ? (
+                              <Badge 
+                                variant="secondary" 
+                                className="text-[10px] font-bold uppercase tracking-wider py-0.5 px-2.5 bg-muted text-muted-foreground border border-border rounded-lg"
+                              >
+                                Cerrado
+                              </Badge>
+                            ) : (
+                              <span className="inline-flex items-center justify-center h-8 px-3 text-xs font-bold bg-primary text-primary-foreground rounded-xl shadow-sm">
                                 Pronosticar
-                              </Link>
-                            </Button>
-                          )}
+                              </span>
+                            )}
+                          </div>
+      
                         </div>
-    
-                      </div>
+                      </Link>
                     </CardContent>
                   </Card>
                 </li>
@@ -303,111 +306,117 @@ export function HistoryListClient({ groupId }: HistoryListClientProps) {
         ) : (
           <ul className="space-y-3">
             {filteredHistory.map((item) => {
+              const matchDate = new Date(item.match.date);
+              const now = new Date();
+              const isLive = item.match.status === "LIVE" || (item.match.status === "SCHEDULED" && now >= matchDate);
+              const isFinished = item.match.status === "FINISHED";
               const isPending = item.pointsEarned === null;
               const hasPoints = item.pointsEarned !== null && item.pointsEarned > 0;
               
               return (
                 <li key={item.id}>
-                  <Card className={`transition-all duration-200 hover:shadow-sm ${
+                  <Card className={`transition-all duration-200 hover:scale-[1.01] hover:shadow-sm ${
                     isPending 
-                      ? item.match.status === "LIVE"
+                      ? isLive
                         ? "border-amber-500/40 bg-amber-500/5 shadow-sm shadow-amber-500/5"
                         : "border-border/60"
                       : hasPoints 
                         ? "border-primary/40 shadow-primary/5 bg-primary/5" 
                         : "border-border/60"
                   }`}>
-                    <CardContent className="p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-4">
-                        
-                        {/* Detalles del partido */}
-                        <div className="min-w-0 flex-1 space-y-2">
-                          <Link
-                            href={`/grupos/${groupId}/partidos/${item.matchId}?from=predicciones`}
-                            className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm font-bold text-foreground hover:text-primary transition"
-                            onClick={handleLinkClick}
-                          >
-                            {item.match.homeTeamCrest && (
-                              <img
-                                src={item.match.homeTeamCrest}
-                                alt={`Bandera de ${item.match.homeTeam}`}
-                                className="inline-block h-3.5 w-5 object-cover rounded-sm border border-muted/50"
-                              />
-                            )}
-                            <span>{item.match.homeTeam}</span>
-                            <span className="text-muted-foreground font-normal text-xs select-none">vs</span>
-                            {item.match.awayTeamCrest && (
-                              <img
-                                src={item.match.awayTeamCrest}
-                                alt={`Bandera de ${item.match.awayTeam}`}
-                                className="inline-block h-3.5 w-5 object-cover rounded-sm border border-muted/50"
-                              />
-                            )}
-                            <span>{item.match.awayTeam}</span>
-                          </Link>
+                    <CardContent className="p-0">
+                      <Link
+                        href={`/grupos/${groupId}/partidos/${item.matchId}?from=predicciones`}
+                        className="block p-4"
+                        onClick={handleLinkClick}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-4">
                           
-                          {/* Detalles meta */}
-                          <p className="text-[10px] text-muted-foreground font-medium">
-                            <span className="text-accent font-semibold">{item.match.phase}</span>
-                            {" · "}
-                            {new Date(item.match.date).toLocaleString("es-ES", {
-                              day: "2-digit",
-                              month: "2-digit",
-                              hour: "2-digit",
-                              minute: "2-digit"
-                            })}
-                          </p>
-    
-                          {/* Predicción vs Real */}
-                          <div className="grid grid-cols-2 gap-4 border-t border-border/40 pt-2 text-[11px] font-semibold">
-                            <div className="space-y-0.5">
-                              <span className="text-muted-foreground text-[10px] font-medium block">Tu Predicción</span>
-                              <span className="text-foreground">
-                                {item.predictionHomeGoals} - {item.predictionAwayGoals}{" "}
-                                <Badge variant="gold" className="text-[9px] font-bold uppercase tracking-wider py-0 px-1 border-accent/20">
-                                  {formatResultType(item.resultType)}
-                                </Badge>
-                              </span>
+                          {/* Detalles del partido */}
+                          <div className="min-w-0 flex-1 space-y-2">
+                            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm font-bold text-foreground">
+                              {item.match.homeTeamCrest && (
+                                <img
+                                  src={item.match.homeTeamCrest}
+                                  alt={`Bandera de ${item.match.homeTeam}`}
+                                  className="inline-block h-3.5 w-5 object-cover rounded-sm border border-muted/50"
+                                />
+                              )}
+                              <span>{item.match.homeTeam}</span>
+                              <span className="text-muted-foreground font-normal text-xs select-none">vs</span>
+                              {item.match.awayTeamCrest && (
+                                <img
+                                  src={item.match.awayTeamCrest}
+                                  alt={`Bandera de ${item.match.awayTeam}`}
+                                  className="inline-block h-3.5 w-5 object-cover rounded-sm border border-muted/50"
+                                />
+                              )}
+                              <span>{item.match.awayTeam}</span>
                             </div>
-                            <div className="space-y-0.5">
-                              <span className="text-muted-foreground text-[10px] font-medium block">Marcador Real</span>
-                              <span className="text-foreground font-bold">
-                                {formatScore(item.match.homeGoals, item.match.awayGoals)}
-                              </span>
+                            
+                            {/* Detalles meta */}
+                            <p className="text-[10px] text-muted-foreground font-medium">
+                              <span className="text-accent font-semibold">{item.match.phase}</span>
+                              {" · "}
+                              {new Date(item.match.date).toLocaleString("es-ES", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit"
+                              })}
+                            </p>
+      
+                            {/* Predicción vs Real */}
+                            <div className="grid grid-cols-2 gap-4 border-t border-border/40 pt-2 text-[11px] font-semibold">
+                              <div className="space-y-0.5">
+                                <span className="text-muted-foreground text-[10px] font-medium block">Tu Predicción</span>
+                                <span className="text-foreground">
+                                  {item.predictionHomeGoals} - {item.predictionAwayGoals}{" "}
+                                  <Badge variant="gold" className="text-[9px] font-bold uppercase tracking-wider py-0 px-1 border-accent/20">
+                                    {formatResultType(item.resultType)}
+                                  </Badge>
+                                </span>
+                              </div>
+                              <div className="space-y-0.5">
+                                <span className="text-muted-foreground text-[10px] font-medium block">Marcador Real</span>
+                                <span className="text-foreground font-bold">
+                                  {isLive || isFinished
+                                    ? `${item.match.homeGoals ?? 0} - ${item.match.awayGoals ?? 0}`
+                                    : "—"}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        </div>
-    
-                        {/* Estado o puntos */}
-                        <div className="text-right shrink-0 select-none">
-                          {item.pointsEarned !== null ? (
-                            <div className={`flex flex-col items-center justify-center p-2 rounded-xl min-w-16 border ${
-                              hasPoints 
-                                ? "bg-primary/10 text-primary border-primary/20" 
-                                : "bg-muted text-muted-foreground border-border"
-                            }`}>
-                              <span className="text-xl font-black leading-none">+{item.pointsEarned}</span>
-                              <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">puntos</span>
-                            </div>
-                          ) : (
-                            item.match.status === "LIVE" || (new Date(item.match.date).getTime() - new Date().getTime() < 3 * 60 * 1000) ? (
-                              <Badge 
-                                variant="secondary" 
-                                className="text-[10px] font-bold uppercase tracking-wider py-0.5 px-2.5 border rounded-lg bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse"
-                              >
-                                En juego
-                              </Badge>
+      
+                          {/* Estado o puntos */}
+                          <div className="text-right shrink-0 select-none">
+                            {item.pointsEarned !== null ? (
+                              <div className={`flex flex-col items-center justify-center p-2 rounded-xl min-w-16 border ${
+                                hasPoints 
+                                  ? "bg-primary/10 text-primary border-primary/20" 
+                                  : "bg-muted text-muted-foreground border-border"
+                              }`}>
+                                <span className="text-xl font-black leading-none">+{item.pointsEarned}</span>
+                                <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">puntos</span>
+                              </div>
                             ) : (
-                              <Button asChild size="sm" variant="outline" className="border-primary/50 text-primary hover:bg-primary/10 font-bold text-xs rounded-xl shadow-sm" onClick={handleLinkClick}>
-                                <Link href={`/grupos/${groupId}/partidos/${item.matchId}?from=predicciones`}>
+                              isLive || (new Date(item.match.date).getTime() - new Date().getTime() < 3 * 60 * 1000) ? (
+                                <Badge 
+                                  variant="secondary" 
+                                  className="text-[10px] font-bold uppercase tracking-wider py-0.5 px-2.5 border rounded-lg bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse"
+                                >
+                                  En juego
+                                </Badge>
+                              ) : (
+                                <span className="inline-flex items-center justify-center h-8 px-3 text-xs font-bold border border-primary/50 text-primary rounded-xl shadow-sm">
                                   Editar
-                                </Link>
-                              </Button>
-                            )
-                          )}
+                                </span>
+                              )
+                            )}
+                          </div>
+      
                         </div>
-    
-                      </div>
+                      </Link>
                     </CardContent>
                   </Card>
                 </li>

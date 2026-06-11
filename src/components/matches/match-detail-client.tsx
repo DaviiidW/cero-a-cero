@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePolling } from "@/hooks/use-polling";
-import { formatResultType, formatScore } from "@/lib/scoring/labels";
+import { formatResultType } from "@/lib/scoring/labels";
 import type { ResultTypeLabel } from "@/lib/scoring/labels";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -225,7 +225,9 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
           <div className="rounded-2xl bg-muted/30 border border-border/40 p-4 text-center select-none space-y-1">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Resultado Real (90 min)</p>
             <p className="text-3xl font-black tracking-tight text-foreground">
-              {formatScore(match.homeGoals, match.awayGoals)}
+              {match.status === "LIVE" || match.status === "FINISHED" || (match.status === "SCHEDULED" && new Date() >= new Date(match.date))
+                ? `${match.homeGoals ?? 0} - ${match.awayGoals ?? 0}`
+                : "—"}
             </p>
           </div>
 
@@ -421,7 +423,7 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
       </Card>
 
       {/* HU-05 y HU-07: Predicciones de los otros usuarios del grupo (Table de shadcn) */}
-      {(match.status === "LIVE" || match.status === "FINISHED") && data.groupPredictions && (
+      {(match.status === "LIVE" || match.status === "FINISHED" || isLocked) && data.groupPredictions && (
         <Card className="border-border shadow-sm">
           <CardHeader className="p-6 pb-2">
             <CardTitle className="text-base font-bold text-foreground flex items-center gap-2 select-none">
