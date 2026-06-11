@@ -5,33 +5,39 @@ import { recalculateAllRankings } from "../src/lib/scoring/ranking-recalc";
 import bcrypt from "bcryptjs";
 
 async function main() {
-  console.log("Creando usuario administrador...");
-  try {
-    const existingAdmin = await db.user.findUnique({
-      where: { email: "admin@ceroacero.com" },
-    });
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminNick = process.env.ADMIN_NICK ?? "Admin";
 
-    if (!existingAdmin) {
-      const passwordHash = await bcrypt.hash("Admin1234!", 12);
-      await db.user.create({
-        data: {
-          email: "admin@ceroacero.com",
-          passwordHash,
-          nickGlobal: "SuperAdmin",
-          role: "SUPER_ADMIN",
-        },
+  if (!adminEmail || !adminPassword) {
+    console.warn("ADMIN_EMAIL o ADMIN_PASSWORD no definidos en .env — se omite la creación del admin.");
+  } else {
+    try {
+      const existingAdmin = await db.user.findUnique({
+        where: { email: adminEmail },
       });
-      console.log("Usuario super admin creado con éxito (admin@ceroacero.com / Admin1234!)");
-    } else {
-      // Asegurarse de que el usuario existente tenga el rol de super admin
-      await db.user.update({
-        where: { id: existingAdmin.id },
-        data: { role: "SUPER_ADMIN" },
-      });
-      console.log("El usuario administrador ya existe. Rol verificado.");
+
+      if (!existingAdmin) {
+        const passwordHash = await bcrypt.hash(adminPassword, 12);
+        await db.user.create({
+          data: {
+            email: adminEmail,
+            passwordHash,
+            nickGlobal: adminNick,
+            role: "SUPER_ADMIN",
+          },
+        });
+        console.log(`Usuario super admin creado con éxito (${adminEmail})`);
+      } else {
+        await db.user.update({
+          where: { id: existingAdmin.id },
+          data: { role: "SUPER_ADMIN" },
+        });
+        console.log("El usuario administrador ya existe. Rol verificado.");
+      }
+    } catch (error) {
+      console.error("Error al crear usuario administrador:", error);
     }
-  } catch (error) {
-    console.error("Error al crear usuario administrador:", error);
   }
 
   console.log("Iniciando la sincronización de partidos del Mundial 2026...");
