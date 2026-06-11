@@ -115,7 +115,7 @@ export default async function HomePage() {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <CardDescription className="text-xs leading-relaxed" style={{ color: "#d0d0d0" }}>
-                Consigue 3 puntos por acertar el marcador exacto de un partido, o 1 punto si adivinas el ganador o el empate (1X2) pero no el marcador exacto.
+                Consigue 4 puntos por acertar el marcador exacto de un partido, o 1 punto si adivinas el ganador o el empate (1X2) pero no el marcador exacto.
               </CardDescription>
             </CardContent>
           </Card>
