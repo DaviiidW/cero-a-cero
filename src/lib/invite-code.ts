@@ -42,8 +42,9 @@ export function getInviteExpiryDate(from = new Date()): Date {
 }
 
 export function getInviteLink(inviteCode: string): string {
-  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-  return `${baseUrl}/unirse/${inviteCode}`;
+  const baseUrl = process.env.NEXTAUTH_URL ?? "https://cero-a-cero-hu3u.vercel.app";
+  const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+  return `${cleanBaseUrl}/unirse/${inviteCode}`;
 }
 
 export function isInviteActive(inviteExpiresAt: Date): boolean {
