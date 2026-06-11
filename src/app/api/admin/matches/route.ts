@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth-admin";
 import { jsonError } from "@/lib/api";
 import { db } from "@/lib/db";
+import { parseMadridTimeToUTC } from "@/lib/date-timezone";
 
 export async function GET() {
   const admin = await requireSuperAdmin();
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
         awayTeam,
         homeTeamCrest: homeTeamCrest || null,
         awayTeamCrest: awayTeamCrest || null,
-        date: new Date(date),
+        date: parseMadridTimeToUTC(date),
         phase,
         groupStageNumber: groupStageNumber ? parseInt(groupStageNumber, 10) : null,
         jornada: parseInt(jornada, 10),

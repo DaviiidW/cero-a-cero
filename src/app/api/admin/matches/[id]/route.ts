@@ -3,6 +3,7 @@ import { requireSuperAdmin } from "@/lib/auth-admin";
 import { jsonError } from "@/lib/api";
 import { db } from "@/lib/db";
 import { processFinishedMatchScoring } from "@/lib/scoring/process-match";
+import { parseMadridTimeToUTC } from "@/lib/date-timezone";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -53,7 +54,7 @@ export async function PUT(request: Request, context: RouteContext) {
         awayTeam: awayTeam !== undefined ? awayTeam : existing.awayTeam,
         homeTeamCrest: homeTeamCrest !== undefined ? homeTeamCrest : existing.homeTeamCrest,
         awayTeamCrest: awayTeamCrest !== undefined ? awayTeamCrest : existing.awayTeamCrest,
-        date: date !== undefined ? new Date(date) : existing.date,
+        date: date !== undefined ? parseMadridTimeToUTC(date) : existing.date,
         phase: phase !== undefined ? phase : existing.phase,
         groupStageNumber: groupStageNumber !== undefined ? (groupStageNumber ? parseInt(groupStageNumber, 10) : null) : existing.groupStageNumber,
         jornada: jornada !== undefined ? parseInt(jornada, 10) : existing.jornada,
