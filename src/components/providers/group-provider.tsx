@@ -25,7 +25,15 @@ const GroupContext = createContext<GroupContextType | undefined>(undefined);
 export function GroupProvider({ children }: { children: React.ReactNode }) {
   const { status } = useSession();
   const [groups, setGroups] = useState<Group[]>([]);
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
+  // Initialize selectedGroupId synchronously from localStorage so that on F5
+  // the value is available immediately — before fetchGroups() completes.
+  // This prevents pages from seeing selectedGroupId=null and redirecting.
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("selectedGroupId") ?? null;
+  });
+
   const [isLoadingGroups, setIsLoadingGroups] = useState<boolean>(true);
 
   const fetchGroups = async () => {
@@ -43,12 +51,15 @@ export function GroupProvider({ children }: { children: React.ReactNode }) {
         const userGroups = data.groups || [];
         setGroups(userGroups);
 
-        // Try to load from localStorage
+        // Keep the stored group if it's still valid (user is still a member).
+        // Only clear it if the group no longer exists in the user's list.
         const stored = localStorage.getItem("selectedGroupId");
         if (stored && userGroups.some((g: Group) => g.id === stored)) {
           setSelectedGroupId(stored);
         } else {
+          // Stored group not found → clear it (removed or deleted)
           setSelectedGroupId(null);
+          localStorage.removeItem("selectedGroupId");
         }
       }
     } catch (err) {
@@ -67,7 +78,7 @@ export function GroupProvider({ children }: { children: React.ReactNode }) {
     if (groupId === null) {
       setSelectedGroupId(null);
       localStorage.removeItem("selectedGroupId");
-    } else if (groups.some((g) => g.id === groupId)) {
+    } else {
       setSelectedGroupId(groupId);
       localStorage.setItem("selectedGroupId", groupId);
     }

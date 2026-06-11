@@ -1,6 +1,6 @@
 import { GroupImageEditor } from "@/components/groups/group-image-editor";
 import { GroupActions } from "@/components/groups/group-actions";
-import { GroupNav } from "@/components/groups/group-nav";
+
 import { InviteInfo } from "@/components/groups/invite-info";
 import { requireAuthenticatedUser, requireGroupAccess } from "@/lib/groups/access";
 import { getInviteLink, isInviteActive } from "@/lib/invite-code";
@@ -41,7 +41,7 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
         </div>
       </div>
 
-      <GroupNav groupId={groupId} active="detail" />
+
 
       {isAdmin ? (
         <InviteInfo
@@ -57,7 +57,7 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Miembros</h2>
         <ul className="divide-y divide-border rounded-2xl border border-border">
-          {ranking.map((row) => {
+          {ranking.rows.map((row) => {
             const member = group.members.find((m) => m.userId === row.userId);
             if (!member) return null;
 

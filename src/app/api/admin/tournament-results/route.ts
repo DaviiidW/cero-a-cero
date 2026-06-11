@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireSuperAdmin } from "@/lib/auth-admin";
 import { jsonError } from "@/lib/api";
 import { db } from "@/lib/db";
+import { recalculateAllRankings } from "@/lib/scoring/ranking-recalc";
 
 export async function GET() {
   const admin = await requireSuperAdmin();
@@ -54,6 +55,8 @@ export async function POST(request: Request) {
       thirdPlace: thirdPlace || null,
     },
   });
+
+  await recalculateAllRankings();
 
   return NextResponse.json({
     result,

@@ -194,7 +194,8 @@ export async function syncMatchesFromFootballData() {
         data,
       });
 
-      if (status === MatchStatus.FINISHED) {
+      // Only score on transition to FINISHED (not on every sync)
+      if (status === MatchStatus.FINISHED && existing.status !== MatchStatus.FINISHED) {
         finishedMatchIds.push(existing.id);
       }
     } else {
@@ -228,33 +229,124 @@ export async function syncMatchesFromFootballData() {
   };
 }
 
+/**
+ * Sincroniza SOLO los partidos que están activos en este momento.
+ * Es mucho más eficiente que syncMatchesFromFootballData porque:
+ * 1. Filtra desde la API los partidos en estado activo antes de procesar.
+ * 2. Solo hace upsert de los partidos relevantes (no todos los del torneo).
+ * 3. Detecta transiciones LIVE→FINISHED para disparar scoring exactamente una vez.
+ */
+export async function syncLiveMatchesOnly(): Promise<{
+  activeMatchesFound: number;
+  matchesSynced: number;
+  finishedMatchesScored: number;
+  predictionsProcessed: number;
+}> {
+  const now = new Date();
+
+  // Step 1: Check our DB for matches that should be active right now
+  const activeInDb = await db.match.findMany({
+    where: {
+      OR: [
+        { status: MatchStatus.LIVE },
+        {
+          status: MatchStatus.SCHEDULED,
+          date: { lte: now },
+        },
+      ],
+    },
+    select: { id: true, externalId: true, status: true },
+  });
+
+  if (activeInDb.length === 0) {
+    return { activeMatchesFound: 0, matchesSynced: 0, finishedMatchesScored: 0, predictionsProcessed: 0 };
+  }
+
+  console.log(`[Live Sync] ${activeInDb.length} partidos activos en BD. Consultando API...`);
+
+  // Step 2: Fetch all matches from API and filter to only active ones
+  const { matches: allApiMatches } = await fetchWorldCupMatches();
+  const activeExternalIds = new Set(activeInDb.map((m) => m.externalId).filter(Boolean));
+
+  // Include matches from API that are currently active OR match our active DB records
+  const relevantApiMatches = allApiMatches.filter((m) => {
+    const isActiveStatus = ["LIVE", "IN_PLAY", "PAUSED", "FINISHED"].includes(m.status);
+    const isInOurActiveSet = activeExternalIds.has(m.id);
+    return isActiveStatus || isInOurActiveSet;
+  });
+
+  let upserted = 0;
+  const finishedMatchIds: string[] = [];
+  const activeDbMap = new Map(activeInDb.map((m) => [m.externalId, m]));
+
+  for (const apiMatch of relevantApiMatches) {
+    const { homeGoals, awayGoals } = getNinetyMinuteScore(apiMatch);
+    const status = mapStatus(apiMatch.status);
+
+    const homeTeamName = apiMatch.homeTeam?.name ? translateTeamName(apiMatch.homeTeam.name) : "Por definir";
+    const awayTeamName = apiMatch.awayTeam?.name ? translateTeamName(apiMatch.awayTeam.name) : "Por definir";
+
+    // For live sync we skip flag downloads (flags don't change mid-game)
+    const existing = activeDbMap.get(apiMatch.id) ??
+      await db.match.findUnique({
+        where: { externalId: apiMatch.id },
+        select: { id: true, status: true },
+      });
+
+    if (!existing) continue;
+
+    await db.match.update({
+      where: { id: existing.id },
+      data: {
+        homeTeam: homeTeamName,
+        awayTeam: awayTeamName,
+        date: new Date(apiMatch.utcDate),
+        status,
+        homeGoals,
+        awayGoals,
+      },
+    });
+
+    // Trigger scoring only on LIVE/SCHEDULED → FINISHED transition
+    if (status === MatchStatus.FINISHED && existing.status !== MatchStatus.FINISHED) {
+      finishedMatchIds.push(existing.id);
+      console.log(`[Live Sync] Partido ${existing.id} finalizado. Disparando scoring...`);
+    }
+
+    upserted += 1;
+  }
+
+  let predictionsProcessed = 0;
+  for (const matchId of finishedMatchIds) {
+    const result = await processFinishedMatchScoring(matchId);
+    predictionsProcessed += result.processed;
+  }
+
+  return {
+    activeMatchesFound: activeInDb.length,
+    matchesSynced: upserted,
+    finishedMatchesScored: finishedMatchIds.length,
+    predictionsProcessed,
+  };
+}
+
 const globalForSync = globalThis as unknown as {
   syncIntervalId: NodeJS.Timeout | undefined;
 };
 
+/**
+ * Scheduler de fallback para desarrollo local.
+ * En producción, el cron de Vercel llama directamente a /api/cron/sync-live-matches.
+ * Aquí se mantiene como backup para entornos sin cron externo.
+ */
 export function startLiveMatchesScheduler() {
   if (globalForSync.syncIntervalId) return;
 
   const runSync = async () => {
     try {
-      const now = new Date();
-      // Find matches in progress or that have reached kickoff date
-      const activeMatches = await db.match.findMany({
-        where: {
-          OR: [
-            { status: MatchStatus.LIVE },
-            {
-              status: MatchStatus.SCHEDULED,
-              date: { lte: now },
-            }
-          ]
-        },
-        select: { id: true }
-      });
-
-      if (activeMatches.length > 0) {
-        console.log(`[Live Scheduler] Detectados ${activeMatches.length} partidos activos/comenzados. Sincronizando...`);
-        await syncMatchesFromFootballData();
+      const result = await syncLiveMatchesOnly();
+      if (result.activeMatchesFound > 0) {
+        console.log(`[Live Scheduler] Sync completado:`, result);
       }
     } catch (error) {
       console.error("[Live Scheduler] Error during background live sync:", error);
@@ -265,4 +357,3 @@ export function startLiveMatchesScheduler() {
   runSync();
   globalForSync.syncIntervalId = setInterval(runSync, 60 * 1000);
 }
-

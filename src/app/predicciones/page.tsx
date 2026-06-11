@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useGroup } from "@/components/providers/group-provider";
 import { HistoryListClient } from "@/components/history/history-list-client";
 import { TournamentPredictionsClient } from "@/components/groups/tournament-predictions-client";
@@ -10,11 +11,18 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function PrediccionesPage() {
-  const { selectedGroupId, selectedGroup, isLoadingGroups } = useGroup();
+  const { selectedGroupId, selectedGroup, groups, isLoadingGroups } = useGroup();
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<"matches" | "special">("matches");
+  const router = useRouter();
 
   const currentUserId = session?.user?.id;
+
+  useEffect(() => {
+    if (!isLoadingGroups && groups.length === 0) {
+      router.replace("/grupos");
+    }
+  }, [isLoadingGroups, groups, router]);
 
   if (isLoadingGroups) {
     return (

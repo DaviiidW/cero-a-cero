@@ -4,6 +4,7 @@ import {
   MAX_GROUP_MEMBERS,
 } from "@/lib/constants/groups";
 import { db } from "@/lib/db";
+import { recalculateGroupRanking, recalculateGlobalRanking } from "@/lib/scoring/ranking-recalc";
 import {
   generateUniqueInviteCode,
   getInviteExpiryDate,
@@ -169,6 +170,9 @@ export async function createGroup(
     return created;
   });
 
+  await recalculateGroupRanking(group.id);
+  await recalculateGlobalRanking();
+
   return {
     ...group,
     inviteLink: getInviteLink(group.inviteCode),
@@ -299,6 +303,9 @@ export async function joinGroup(
     }),
   ]);
 
+  await recalculateGroupRanking(group.id);
+  await recalculateGlobalRanking();
+
   return { groupId: group.id };
 }
 
@@ -332,6 +339,7 @@ export async function leaveGroup(
       where: { userId_groupId: { userId, groupId } },
     });
     await db.group.delete({ where: { id: groupId } });
+    await recalculateGlobalRanking();
     return { deleted: true };
   }
 
@@ -344,6 +352,10 @@ export async function leaveGroup(
   });
 
   const deleted = await deleteGroupIfSingleOrEmpty(groupId);
+  if (!deleted) {
+    await recalculateGroupRanking(groupId);
+  }
+  await recalculateGlobalRanking();
   return { deleted };
 }
 
@@ -389,7 +401,11 @@ export async function kickMember(
     },
   });
 
-  await deleteGroupIfEmpty(groupId);
+  const deleted = await deleteGroupIfEmpty(groupId);
+  if (!deleted) {
+    await recalculateGroupRanking(groupId);
+  }
+  await recalculateGlobalRanking();
   return { success: true };
 }
 

@@ -18,7 +18,15 @@ export function DashboardClient({ currentUserId }: DashboardClientProps) {
   const router = useRouter();
   const { selectedGroupId, selectedGroup, isLoadingGroups } = useGroup();
 
-  // If loading, show spinner
+  // All hooks must be called unconditionally before any early returns (Rules of Hooks)
+  // Redirect to /grupos if not loading and no group is selected
+  useEffect(() => {
+    if (!isLoadingGroups && !selectedGroupId) {
+      router.replace("/grupos");
+    }
+  }, [isLoadingGroups, selectedGroupId, router]);
+
+  // Loading state
   if (isLoadingGroups) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -26,15 +34,6 @@ export function DashboardClient({ currentUserId }: DashboardClientProps) {
       </div>
     );
   }
-
-  // No group selected → redirect to menu (creates a proper history entry)
-  // useEffect avoids calling router during render
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useEffect(() => {
-    if (!isLoadingGroups && !selectedGroupId) {
-      router.replace("/grupos");
-    }
-  }, [isLoadingGroups, selectedGroupId, router]);
 
   if (!selectedGroupId) {
     // Render nothing while redirecting

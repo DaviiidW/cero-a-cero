@@ -27,7 +27,12 @@ export async function GET(_request: Request, context: RouteContext) {
     orderBy: { date: "asc" },
   });
   const now = new Date();
-  const hasStarted = firstMatch ? now >= new Date(firstMatch.date) : false;
+  const activeOrFinishedMatch = await db.match.findFirst({
+    where: {
+      status: { in: ["LIVE", "FINISHED"] },
+    },
+  });
+  const hasStarted = !!activeOrFinishedMatch || (firstMatch ? now >= new Date(firstMatch.date) : false);
 
   // Retrieve user's tournament prediction
   const prediction = await db.tournamentPrediction.findUnique({
@@ -147,7 +152,12 @@ export async function POST(request: Request, context: RouteContext) {
     orderBy: { date: "asc" },
   });
   const now = new Date();
-  const hasStarted = firstMatch ? now >= new Date(firstMatch.date) : false;
+  const activeOrFinishedMatch = await db.match.findFirst({
+    where: {
+      status: { in: ["LIVE", "FINISHED"] },
+    },
+  });
+  const hasStarted = !!activeOrFinishedMatch || (firstMatch ? now >= new Date(firstMatch.date) : false);
 
   if (hasStarted) {
     return jsonError("El torneo ya ha comenzado. Las predicciones especiales están bloqueadas.", 400);

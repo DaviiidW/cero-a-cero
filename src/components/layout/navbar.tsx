@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useGroup } from "@/components/providers/group-provider";
 
 import { useState, useEffect } from "react";
-import { Sun, Moon, LogOut, Settings, Users } from "lucide-react";
+import { Sun, Moon, LogOut, Settings, Users, User } from "lucide-react";
 
 export function Navbar() {
   const { data: session, status } = useSession();
@@ -87,36 +87,38 @@ export function Navbar() {
           {isAuthenticated ? (
             <>
               {/* Desktop links */}
-              <div className="hidden md:flex items-center gap-1">
-                <Button
-                  variant={pathname === "/" ? "secondary" : "ghost"}
-                  size="sm"
-                  asChild
-                >
-                  <Link href="/" className="text-xs font-semibold">Clasificación</Link>
-                </Button>
-                <Button
-                  variant={pathname === "/predicciones" ? "secondary" : "ghost"}
-                  size="sm"
-                  asChild
-                >
-                  <Link href="/predicciones" className="text-xs font-semibold">Predicciones</Link>
-                </Button>
-                <Button
-                  variant={pathname === "/calendario" ? "secondary" : "ghost"}
-                  size="sm"
-                  asChild
-                >
-                  <Link href="/calendario" className="text-xs font-semibold">Calendario</Link>
-                </Button>
-                <Button
-                  variant={pathname === "/ranking" ? "secondary" : "ghost"}
-                  size="sm"
-                  asChild
-                >
-                  <Link href="/ranking" className="text-xs font-semibold">Global</Link>
-                </Button>
-              </div>
+              {groups.length > 0 && (
+                <div className="hidden md:flex items-center gap-1">
+                  <Button
+                    variant={pathname === "/" ? "secondary" : "ghost"}
+                    size="sm"
+                    asChild
+                  >
+                    <Link href="/" className="text-xs font-semibold">Clasificación</Link>
+                  </Button>
+                  <Button
+                    variant={pathname === "/predicciones" ? "secondary" : "ghost"}
+                    size="sm"
+                    asChild
+                  >
+                    <Link href="/predicciones" className="text-xs font-semibold">Predicciones</Link>
+                  </Button>
+                  <Button
+                    variant={pathname === "/calendario" ? "secondary" : "ghost"}
+                    size="sm"
+                    asChild
+                  >
+                    <Link href="/calendario" className="text-xs font-semibold">Calendario</Link>
+                  </Button>
+                  <Button
+                    variant={pathname === "/ranking" ? "secondary" : "ghost"}
+                    size="sm"
+                    asChild
+                  >
+                    <Link href="/ranking" className="text-xs font-semibold">Global</Link>
+                  </Button>
+                </div>
+              )}
 
               {/* Super Admin Dashboard link */}
               {isSuperAdmin && (
@@ -140,6 +142,18 @@ export function Navbar() {
                     {session.user.nickGlobal}
                   </Link>
                 </Button>
+                {pathname === "/grupos" && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    asChild
+                    className="md:hidden size-8 border border-border text-muted-foreground hover:text-foreground transition active:scale-95 shrink-0"
+                  >
+                    <Link href="/perfil" aria-label="Perfil">
+                      <User className="size-4" />
+                    </Link>
+                  </Button>
+                )}
                 <button
                   onClick={handleSignOut}
                   aria-label="Cerrar sesión"

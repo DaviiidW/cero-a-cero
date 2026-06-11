@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useGroup } from "@/components/providers/group-provider";
 import { MatchesListClient } from "@/components/matches/matches-list-client";
 import { Calendar, AlertCircle } from "lucide-react";
@@ -7,7 +9,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function CalendarioPage() {
-  const { selectedGroupId, selectedGroup, isLoadingGroups } = useGroup();
+  const { selectedGroupId, selectedGroup, groups, isLoadingGroups } = useGroup();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoadingGroups && groups.length === 0) {
+      router.replace("/grupos");
+    }
+  }, [isLoadingGroups, groups, router]);
 
   if (isLoadingGroups) {
     return (

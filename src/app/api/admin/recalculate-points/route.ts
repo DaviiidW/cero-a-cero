@@ -3,6 +3,7 @@ import { requireSuperAdmin } from "@/lib/auth-admin";
 import { jsonError } from "@/lib/api";
 import { db } from "@/lib/db";
 import { calculatePredictionPoints } from "@/lib/scoring/calculate";
+import { recalculateAllRankings } from "@/lib/scoring/ranking-recalc";
 
 export async function POST() {
   const admin = await requireSuperAdmin();
@@ -86,6 +87,8 @@ export async function POST() {
         predictionsProcessed: updatedPredictionsCount,
       };
     });
+
+    await recalculateAllRankings();
 
     return NextResponse.json({
       success: true,

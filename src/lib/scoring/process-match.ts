@@ -1,8 +1,9 @@
 import { MatchStatus } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { calculatePredictionPoints } from "@/lib/scoring/calculate";
+import { recalculateAllRankings } from "@/lib/scoring/ranking-recalc";
 
-export async function processFinishedMatchScoring(matchId: string) {
+export async function processFinishedMatchScoring(matchId: string, recalculate = true) {
   const match = await db.match.findUnique({
     where: { id: matchId },
   });
@@ -66,6 +67,10 @@ export async function processFinishedMatchScoring(matchId: string) {
     }
   });
 
+  if (recalculate) {
+    await recalculateAllRankings();
+  }
+
   return { processed: scored.length };
 }
 
@@ -87,8 +92,12 @@ export async function processAllFinishedMatchesScoring() {
   let totalProcessed = 0;
 
   for (const match of matches) {
-    const result = await processFinishedMatchScoring(match.id);
+    const result = await processFinishedMatchScoring(match.id, false);
     totalProcessed += result.processed;
+  }
+
+  if (matches.length > 0) {
+    await recalculateAllRankings();
   }
 
   return { matchesScored: matches.length, predictionsProcessed: totalProcessed };

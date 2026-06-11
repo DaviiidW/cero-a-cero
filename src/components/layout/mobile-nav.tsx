@@ -5,15 +5,23 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Trophy, ClipboardList, Calendar, Globe, User } from "lucide-react";
 import { useGroup } from "@/components/providers/group-provider";
+import { useEffect, useState } from "react";
 
 export function MobileNav() {
   const { status } = useSession();
   const { selectedGroupId } = useGroup();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [mounted, setMounted] = useState(false);
 
-  if (status !== "authenticated") return null;
-  if (!selectedGroupId) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Render nothing on the server and until hydration is complete
+  // This prevents SSR/client mismatch since session and group state
+  // are only available on the client.
+  if (!mounted || status !== "authenticated" || !selectedGroupId) return null;
 
   const fromParam = searchParams.get("from");
 
