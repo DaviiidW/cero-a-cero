@@ -105,17 +105,52 @@ function mapJornada(stage: string, matchday: number | null): number {
   return 1;
 }
 
-function getNinetyMinuteScore(match: FootballDataMatch) {
+async function fetchFallbackScores(): Promise<Map<number, { homeGoals: number; awayGoals: number }>> {
+  const scoresMap = new Map<number, { homeGoals: number; awayGoals: number }>();
+  try {
+    const res = await fetch("https://native-stats.org/competition/WC/", {
+      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" },
+      next: { revalidate: 0 }
+    } as RequestInit & { next?: { revalidate: number } });
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const html = await res.text();
+    const matchBlocks = html.split(/\/match\/(\d+)/g);
+    for (let i = 1; i < matchBlocks.length; i += 2) {
+      const id = parseInt(matchBlocks[i], 10);
+      const segment = matchBlocks[i + 1] || "";
+      const scoreMatch = segment.substring(0, 500).match(/>\s*(\d+)\s*:\s*(\d+)\s*</);
+      if (scoreMatch) {
+        scoresMap.set(id, {
+          homeGoals: parseInt(scoreMatch[1], 10),
+          awayGoals: parseInt(scoreMatch[2], 10),
+        });
+      }
+    }
+  } catch (error) {
+    console.error("[Fallback Sync] Error fetching fallback scores from native-stats:", error);
+  }
+  return scoresMap;
+}
+
+function getNinetyMinuteScore(match: FootballDataMatch, fallbackScores?: Map<number, { homeGoals: number; awayGoals: number }>) {
   const isLiveOrFinished = ["LIVE", "IN_PLAY", "PAUSED", "FINISHED"].includes(match.status);
   if (!isLiveOrFinished) {
     return { homeGoals: null, awayGoals: null };
   }
 
   const fullTime = match.score.fullTime;
-  return {
-    homeGoals: fullTime.home ?? fullTime.homeTeam ?? null,
-    awayGoals: fullTime.away ?? fullTime.awayTeam ?? null,
-  };
+  let homeGoals = fullTime.home ?? fullTime.homeTeam ?? null;
+  let awayGoals = fullTime.away ?? fullTime.awayTeam ?? null;
+
+  if (homeGoals === null && awayGoals === null && fallbackScores) {
+    const fallback = fallbackScores.get(match.id);
+    if (fallback !== undefined) {
+      homeGoals = fallback.homeGoals;
+      awayGoals = fallback.awayGoals;
+    }
+  }
+
+  return { homeGoals, awayGoals };
 }
 
 async function downloadFlagLocally(teamName: string, remoteUrl: string | null | undefined): Promise<string | null> {
@@ -155,11 +190,12 @@ async function downloadFlagLocally(teamName: string, remoteUrl: string | null | 
 
 export async function syncMatchesFromFootballData() {
   const { matches } = await fetchWorldCupMatches();
+  const fallbackScores = await fetchFallbackScores();
   let upserted = 0;
   const finishedMatchIds: string[] = [];
 
   for (const apiMatch of matches) {
-    const { homeGoals, awayGoals } = getNinetyMinuteScore(apiMatch);
+    const { homeGoals, awayGoals } = getNinetyMinuteScore(apiMatch, fallbackScores);
     const status = mapStatus(apiMatch.status);
 
     const homeTeamName = apiMatch.homeTeam?.name ? translateTeamName(apiMatch.homeTeam.name) : "Por definir";
@@ -214,8 +250,13 @@ export async function syncMatchesFromFootballData() {
         },
       });
 
-      // Only score on transition to FINISHED (not on every sync)
-      if (finalStatus === MatchStatus.FINISHED && existing.status !== MatchStatus.FINISHED) {
+      // Only score on transition to FINISHED or when goals are updated from null to a number
+      const becameFinished = finalStatus === MatchStatus.FINISHED && existing.status !== MatchStatus.FINISHED;
+      const goalsPopulated = finalStatus === MatchStatus.FINISHED &&
+                             (existing.homeGoals === null || existing.awayGoals === null) &&
+                             (finalHomeGoals !== null && finalAwayGoals !== null);
+
+      if (becameFinished || goalsPopulated) {
         finishedMatchIds.push(existing.id);
       }
     } else {
@@ -265,6 +306,7 @@ export async function syncLiveMatchesOnly(): Promise<{
   const now = new Date();
 
   // Step 1: Check our DB for matches that should be active right now
+  // Includes finished matches with missing/null goals
   const activeInDb = await db.match.findMany({
     where: {
       OR: [
@@ -272,6 +314,13 @@ export async function syncLiveMatchesOnly(): Promise<{
         {
           status: MatchStatus.SCHEDULED,
           date: { lte: now },
+        },
+        {
+          status: MatchStatus.FINISHED,
+          OR: [
+            { homeGoals: null },
+            { awayGoals: null },
+          ],
         },
       ],
     },
@@ -286,6 +335,7 @@ export async function syncLiveMatchesOnly(): Promise<{
 
   // Step 2: Fetch all matches from API and filter to only active ones
   const { matches: allApiMatches } = await fetchWorldCupMatches();
+  const fallbackScores = await fetchFallbackScores();
   const activeExternalIds = new Set(activeInDb.map((m) => m.externalId).filter(Boolean));
 
   // Include matches from API that are currently active OR match our active DB records
@@ -300,7 +350,7 @@ export async function syncLiveMatchesOnly(): Promise<{
   const activeDbMap = new Map(activeInDb.map((m) => [m.externalId, m]));
 
   for (const apiMatch of relevantApiMatches) {
-    const { homeGoals, awayGoals } = getNinetyMinuteScore(apiMatch);
+    const { homeGoals, awayGoals } = getNinetyMinuteScore(apiMatch, fallbackScores);
     const status = mapStatus(apiMatch.status);
 
     const homeTeamName = apiMatch.homeTeam?.name ? translateTeamName(apiMatch.homeTeam.name) : "Por definir";
@@ -341,10 +391,15 @@ export async function syncLiveMatchesOnly(): Promise<{
       },
     });
 
-    // Trigger scoring only on LIVE/SCHEDULED → FINISHED transition
-    if (finalStatus === MatchStatus.FINISHED && existing.status !== MatchStatus.FINISHED) {
+    // Trigger scoring on transition to FINISHED or when goals are updated from null to a number
+    const becameFinished = finalStatus === MatchStatus.FINISHED && existing.status !== MatchStatus.FINISHED;
+    const goalsPopulated = finalStatus === MatchStatus.FINISHED &&
+                           (existing.homeGoals === null || existing.awayGoals === null) &&
+                           (finalHomeGoals !== null && finalAwayGoals !== null);
+
+    if (becameFinished || goalsPopulated) {
       finishedMatchIds.push(existing.id);
-      console.log(`[Live Sync] Partido ${existing.id} finalizado. Disparando scoring...`);
+      console.log(`[Live Sync] Partido ${existing.id} finalizado y puntuado. Disparando scoring...`);
     }
 
     upserted += 1;

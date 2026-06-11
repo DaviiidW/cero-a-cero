@@ -48,7 +48,7 @@ export function RankingTable({
                 <>
                   <TableHead className="w-24 text-center font-bold text-xs uppercase tracking-wider text-muted-foreground">Partidos</TableHead>
                   <TableHead className="w-24 text-center font-bold text-xs uppercase tracking-wider text-muted-foreground">Especiales</TableHead>
-                  <TableHead className="w-16 text-center font-bold text-xs uppercase tracking-wider text-muted-foreground" title="Marcadores Exactos (3 pts)">M.E.</TableHead>
+                  <TableHead className="w-16 text-center font-bold text-xs uppercase tracking-wider text-muted-foreground" title="Marcadores Exactos (4 pts)">M.E.</TableHead>
                 </>
               )}
               <TableHead className="w-24 text-right font-bold text-xs uppercase tracking-wider text-muted-foreground">{hasDetails ? "Total" : "Puntos"}</TableHead>
@@ -195,7 +195,7 @@ export function RankingTable({
                 <ul className="space-y-1.5 list-disc pl-4 text-muted-foreground">
                   <li><strong>Partidos (Resultados regulares)</strong>:
                     <ul className="list-circle pl-4 mt-0.5 space-y-0.5">
-                      <li><span className="text-foreground font-semibold">3 puntos</span> por acertar el marcador exacto.</li>
+                      <li><span className="text-foreground font-semibold">4 puntos</span> por acertar el marcador exacto.</li>
                       <li><span className="text-foreground font-semibold">1 punto</span> por acertar ganador o empate (1X2) pero no el marcador.</li>
                     </ul>
                   </li>
@@ -216,7 +216,7 @@ export function RankingTable({
                   Criterios de Desempate (en orden)
                 </p>
                 <ol className="space-y-1.5 list-decimal pl-4 text-muted-foreground">
-                  <li><strong>M.E. (Marcadores Exactos)</strong>: Quien tenga la mayor cantidad de aciertos perfectos de marcador exacto (3 puntos).</li>
+                  <li><strong>M.E. (Marcadores Exactos)</strong>: Quien tenga la mayor cantidad de aciertos perfectos de marcador exacto (4 puntos).</li>
                   <li><strong>Campeón del Mundo</strong>: Quien haya acertado correctamente el campeón del mundo en su predicción especial.</li>
                 </ol>
               </div>

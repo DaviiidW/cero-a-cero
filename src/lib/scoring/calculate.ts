@@ -27,7 +27,7 @@ export function calculatePredictionPoints(
     prediction.predictionHomeGoals === actual.homeGoals &&
     prediction.predictionAwayGoals === actual.awayGoals
   ) {
-    return 3;
+    return 4;
   }
 
   if (prediction.resultType === actualResult) {

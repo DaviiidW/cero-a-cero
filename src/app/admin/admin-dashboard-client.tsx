@@ -148,7 +148,7 @@ export function AdminDashboardClient() {
   };
 
   const handleRecalculatePoints = async () => {
-    if (!confirm("¿Estás seguro de que deseas recalcular todos los puntos de las predicciones? Esto restablecerá y volverá a calcular las puntuaciones de todos los usuarios en base a las nuevas reglas 3-1-0.")) {
+    if (!confirm("¿Estás seguro de que deseas recalcular todos los puntos de las predicciones? Esto restablecerá y volverá a calcular las puntuaciones de todos los usuarios en base a las nuevas reglas 4-1-0.")) {
       return;
     }
     setRecalculating(true);
@@ -392,7 +392,7 @@ export function AdminDashboardClient() {
               🔄 Mantenimiento y Puntuaciones
             </h3>
             <p className="text-xs text-muted-foreground select-none">
-              Recalcula todos los puntos de las predicciones de partidos guardados en base al nuevo sistema 3-1-0.
+              Recalcula todos los puntos de las predicciones de partidos guardados en base al nuevo sistema 4-1-0.
             </p>
           </div>
 
@@ -403,7 +403,7 @@ export function AdminDashboardClient() {
               disabled={recalculating}
               className="w-full sm:w-auto px-5 py-3 text-xs font-extrabold rounded-lg bg-destructive text-white hover:bg-destructive/90 transition active:scale-95 disabled:opacity-50 cursor-pointer"
             >
-              {recalculating ? "Recalculando..." : "Recalcular Todos los Puntos (3-1-0)"}
+              {recalculating ? "Recalculando..." : "Recalcular Todos los Puntos (4-1-0)"}
             </button>
           </div>
         </div>
