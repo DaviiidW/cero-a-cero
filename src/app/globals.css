@@ -46,6 +46,33 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  --animate-blob: blob 15s infinite ease-in-out;
+  --animate-blob-slow: blob 22s infinite ease-in-out;
+  --animate-blob-reverse: blob-reverse 18s infinite ease-in-out;
+
+  @keyframes blob {
+    0%, 100% {
+      transform: translate(0px, 0px) scale(1);
+    }
+    33% {
+      transform: translate(50px, -80px) scale(1.2);
+    }
+    66% {
+      transform: translate(-40px, 50px) scale(0.8);
+    }
+  }
+  @keyframes blob-reverse {
+    0%, 100% {
+      transform: translate(0px, 0px) scale(1);
+    }
+    33% {
+      transform: translate(-50px, 60px) scale(0.85);
+    }
+    66% {
+      transform: translate(60px, -40px) scale(1.15);
+    }
+  }
 }
 
 :root {
@@ -101,4 +128,25 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Auth glass panel: force light text regardless of light/dark theme */
+[data-auth-panel] label {
+  color: #e5e7eb !important;
+}
+[data-auth-panel] input {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+[data-auth-panel] input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+[data-auth-panel] .text-muted-foreground {
+  color: #9ca3af !important;
+}
+[data-auth-panel] a.text-muted-foreground {
+  color: #9ca3af !important;
+}
+[data-auth-panel] a.text-muted-foreground:hover {
+  color: #d1d5db !important;
 }

@@ -24,11 +24,11 @@ export default async function HomePage() {
     <div className="relative min-h-[calc(100vh-4rem)] flex flex-col justify-center overflow-x-hidden">
       {/* Fixed background image viewport-locked to look perfect on mobile and prevent stretching */}
       <div 
-        className="fixed inset-0 bg-cover bg-[position:center_75%] bg-no-repeat z-0"
+        className="fixed inset-0 bg-cover bg-[position:center_85%] bg-no-repeat z-0"
         style={{ backgroundImage: "url('/seleccion_espanola.jpg')" }}
       />
-      {/* Dark tone overlay with even lower opacity for maximum image clarity */}
-      <div className="fixed inset-0 bg-gradient-to-b from-background/15 via-background/45 to-background z-0" />
+      {/* Dark overlay — uses black so it stays dark in both light and dark mode */}
+      <div className="fixed inset-0 bg-gradient-to-b from-black/30 via-black/55 to-black/80 z-0" />
       
       <div className="mx-auto max-w-4xl px-6 py-12 md:py-20 text-center space-y-8 relative z-10 w-full">
         
@@ -49,19 +49,19 @@ export default async function HomePage() {
 
         {/* Headline / Title in the style of the reference image */}
         <div className="space-y-4 max-w-2xl mx-auto">
-          <h1 
-            className={`${anton.className} text-6xl sm:text-8xl tracking-tight uppercase leading-none select-none drop-shadow-lg`}
+          <h1
+            className={`${anton.className} text-6xl sm:text-8xl tracking-tight uppercase leading-none select-none`}
             style={{
               color: "#ffffff",
-              textShadow: "4px 4px 0px var(--accent), 8px 8px 0px rgba(0, 0, 0, 0.9)",
+              textShadow: "4px 4px 0px #c0392b, 8px 8px 0px rgba(0,0,0,0.85)",
             }}
           >
             Cero a Cero
           </h1>
-          <p className="text-lg sm:text-xl text-stone-200 font-semibold tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
+          <p className="text-lg sm:text-xl font-semibold tracking-wide" style={{ color: "#f0f0f0", textShadow: "0 2px 6px rgba(0,0,0,0.9)" }}>
             La porra definitiva del mundial de fútbol
           </p>
-          <p className="text-sm sm:text-base text-stone-300 font-normal max-w-xl mx-auto leading-relaxed drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+          <p className="text-sm sm:text-base font-normal max-w-xl mx-auto leading-relaxed" style={{ color: "#e0e0e0", textShadow: "0 1px 4px rgba(0,0,0,0.9)" }}>
             Crea tu grupo, predice los marcadores de todas las fases del torneo, compite con tus amigos y demuestra quién sabe más de fútbol.
           </p>
         </div>
@@ -78,43 +78,43 @@ export default async function HomePage() {
 
         {/* Features grid with glassmorphic cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-10 text-left max-w-3xl mx-auto border-t border-border/40">
-          <Card className="bg-card/70 backdrop-blur-md border-border/40 shadow-xl">
+          <Card className="bg-black/40 backdrop-blur-md border-white/10 shadow-xl">
             <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                <CheckCircle className="size-4 text-primary shrink-0" />
+              <CardTitle className="text-sm font-bold flex items-center gap-2" style={{ color: "#ffffff", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+                <CheckCircle className="size-4 text-green-400 shrink-0" />
                 Grupos privados
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-              <CardDescription className="text-xs leading-relaxed text-muted-foreground">
+              <CardDescription className="text-xs leading-relaxed" style={{ color: "#d0d0d0" }}>
                 Crea tu propia liga de predicciones privada usando un código de invitación para jugar solo con tus amigos o compañeros.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="bg-card/70 backdrop-blur-md border-border/40 shadow-xl">
+          <Card className="bg-black/40 backdrop-blur-md border-white/10 shadow-xl">
             <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
-                <CheckCircle className="size-4 text-primary shrink-0" />
+              <CardTitle className="text-sm font-bold flex items-center gap-2" style={{ color: "#ffffff", textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}>
+                <CheckCircle className="size-4 text-green-400 shrink-0" />
                 Pronósticos en vivo
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-              <CardDescription className="text-xs leading-relaxed text-muted-foreground">
+              <CardDescription className="text-xs leading-relaxed" style={{ color: "#d0d0d0" }}>
                 Realiza o edita tus predicciones de goles hasta 3 minutos antes del pitido inicial. Revisa los resultados del grupo en tiempo real.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="bg-card/70 backdrop-blur-md border-border/40 shadow-xl">
+          <Card className="bg-black/40 backdrop-blur-md border-white/10 shadow-xl">
             <CardHeader className="p-4 pb-2">
-              <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2 text-accent">
-                <Trophy className="size-4 text-accent shrink-0" />
+              <CardTitle className="text-sm font-bold flex items-center gap-2" style={{ color: "#ffd700" }}>
+                <Trophy className="size-4 shrink-0" style={{ color: "#ffd700" }} />
                 Reglas de puntuación
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 pt-0">
-              <CardDescription className="text-xs leading-relaxed text-muted-foreground">
+              <CardDescription className="text-xs leading-relaxed" style={{ color: "#d0d0d0" }}>
                 Consigue 1 punto por acertar el signo ganador (1X2) y 1 punto adicional por adivinar el marcador exacto de cada partido.
               </CardDescription>
             </CardContent>

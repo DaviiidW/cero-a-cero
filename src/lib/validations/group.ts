@@ -16,7 +16,14 @@ export const createGroupSchema = z.object({
     .trim()
     .min(3, "El nombre debe tener al menos 3 caracteres")
     .max(50, "El nombre no puede superar 50 caracteres"),
-  image: z.string().url("La imagen debe ser una URL válida").optional().or(z.literal("")),
+  image: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine(
+      (val) => !val || val.startsWith("/") || /^https?:\/\//.test(val),
+      "La imagen debe ser una URL válida o una ruta relativa"
+    ),
   nick: groupNickSchema,
 });
 

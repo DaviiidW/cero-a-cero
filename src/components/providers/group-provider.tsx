@@ -16,7 +16,7 @@ type GroupContextType = {
   selectedGroup: Group | null;
   groups: Group[];
   isLoadingGroups: boolean;
-  changeGroup: (groupId: string) => void;
+  changeGroup: (groupId: string | null) => void;
   refreshGroups: () => Promise<void>;
 };
 
@@ -47,9 +47,6 @@ export function GroupProvider({ children }: { children: React.ReactNode }) {
         const stored = localStorage.getItem("selectedGroupId");
         if (stored && userGroups.some((g: Group) => g.id === stored)) {
           setSelectedGroupId(stored);
-        } else if (userGroups.length > 0) {
-          setSelectedGroupId(userGroups[0].id);
-          localStorage.setItem("selectedGroupId", userGroups[0].id);
         } else {
           setSelectedGroupId(null);
         }
@@ -66,8 +63,11 @@ export function GroupProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  const changeGroup = (groupId: string) => {
-    if (groups.some((g) => g.id === groupId)) {
+  const changeGroup = (groupId: string | null) => {
+    if (groupId === null) {
+      setSelectedGroupId(null);
+      localStorage.removeItem("selectedGroupId");
+    } else if (groups.some((g) => g.id === groupId)) {
       setSelectedGroupId(groupId);
       localStorage.setItem("selectedGroupId", groupId);
     }

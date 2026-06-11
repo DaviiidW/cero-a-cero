@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useGroup } from "@/components/providers/group-provider";
 import { GroupRankingClient } from "@/components/ranking/group-ranking-client";
 import { Button } from "@/components/ui/button";
@@ -13,8 +16,10 @@ type DashboardClientProps = {
 };
 
 export function DashboardClient({ currentUserId }: DashboardClientProps) {
-  const { selectedGroupId, selectedGroup, groups, isLoadingGroups } = useGroup();
+  const router = useRouter();
+  const { selectedGroupId, selectedGroup, isLoadingGroups } = useGroup();
 
+  // If loading, show spinner
   if (isLoadingGroups) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -23,35 +28,20 @@ export function DashboardClient({ currentUserId }: DashboardClientProps) {
     );
   }
 
-  // User has no groups
-  if (groups.length === 0) {
+  // No group selected → redirect to menu (creates a proper history entry)
+  // useEffect avoids calling router during render
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (!isLoadingGroups && !selectedGroupId) {
+      router.replace("/grupos");
+    }
+  }, [isLoadingGroups, selectedGroupId, router]);
+
+  if (!selectedGroupId) {
+    // Render nothing while redirecting
     return (
-      <div className="mx-auto max-w-lg px-4 py-12 text-center space-y-6">
-        <div className="size-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto shadow-inner border border-primary/20">
-          <Trophy className="size-8 stroke-[1.8px]" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">¡Te damos la bienvenida a Cero a Cero!</h2>
-          <p className="text-sm text-muted-foreground">
-            Para empezar a pronosticar los partidos del Mundial 2026 y competir en la porra, necesitas unirte o crear un grupo con tus amigos.
-          </p>
-        </div>
-        <Card className="border-border shadow-sm">
-          <CardContent className="p-6 space-y-3">
-            <Button asChild className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
-              <Link href="/grupos/nuevo" className="flex items-center justify-center gap-2 font-bold">
-                <PlusCircle className="size-4" />
-                Crear un nuevo grupo
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full">
-              <Link href="/grupos/unirse" className="flex items-center justify-center gap-2 font-bold">
-                <Users className="size-4" />
-                Unirse a un grupo existente
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="flex h-[50vh] items-center justify-center">
+        <p className="text-sm text-muted-foreground animate-pulse">Redirigiendo al menú...</p>
       </div>
     );
   }

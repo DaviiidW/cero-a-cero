@@ -4,12 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Trophy, ClipboardList, Calendar, Globe, User } from "lucide-react";
+import { useGroup } from "@/components/providers/group-provider";
 
 export function MobileNav() {
   const { status } = useSession();
+  const { selectedGroupId } = useGroup();
   const pathname = usePathname();
 
   if (status !== "authenticated") return null;
+  if (!selectedGroupId) return null;
 
   const navItems = [
     {

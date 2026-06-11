@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useGroup } from "@/components/providers/group-provider";
 
 type JoinGroupFormProps = {
   defaultCode?: string;
@@ -18,6 +19,7 @@ export function JoinGroupForm({
   groupName,
 }: JoinGroupFormProps) {
   const router = useRouter();
+  const { refreshGroups, changeGroup } = useGroup();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -45,6 +47,9 @@ export function JoinGroupForm({
       setError(data.error ?? "No se pudo unir al grupo");
       return;
     }
+
+    await refreshGroups();
+    changeGroup(data.groupId);
 
     router.push(`/grupos/${data.groupId}`);
     router.refresh();

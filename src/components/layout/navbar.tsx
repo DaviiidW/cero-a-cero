@@ -2,17 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { useGroup } from "@/components/providers/group-provider";
+
 import { useState, useEffect } from "react";
-import { Sun, Moon, LogOut, Settings } from "lucide-react";
+import { Sun, Moon, LogOut, Settings, Users } from "lucide-react";
 
 export function Navbar() {
   const { data: session, status } = useSession();
   const isAuthenticated = status === "authenticated";
   const pathname = usePathname();
+  const router = useRouter();
 
   const { groups, selectedGroupId, changeGroup } = useGroup();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
@@ -46,7 +48,11 @@ export function Navbar() {
       <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 gap-4">
         
         {/* Logo */}
-        <Link href="/" className="flex items-center shrink-0">
+        <Link
+          href={isAuthenticated ? "/grupos" : "/"}
+          className="flex items-center shrink-0"
+          onClick={() => isAuthenticated && changeGroup(null)}
+        >
           <Image
             src="/logo_0-0nobg.png"
             alt="Cero a Cero"
@@ -57,20 +63,22 @@ export function Navbar() {
           />
         </Link>
 
-        {/* Group Selector (Authenticated only) */}
-        {isAuthenticated && groups.length > 0 && (
-          <div className="flex items-center max-w-[160px] sm:max-w-xs shrink min-w-0">
-            <select
-              value={selectedGroupId || ""}
-              onChange={(e) => changeGroup(e.target.value)}
-              className="h-8 w-full truncate rounded-lg border border-input bg-background px-2 py-0.5 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-primary shadow-sm"
+
+        {/* Menu button replacing the old dropdown */}
+        {isAuthenticated && selectedGroupId && (
+          <div className="flex items-center shrink-0 min-w-0">
+            <Button
+              onClick={() => {
+                changeGroup(null);
+                router.push("/grupos");
+              }}
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs font-bold border-border bg-background hover:bg-muted text-foreground transition active:scale-95 shrink-0 flex items-center gap-1.5 px-3 rounded-lg shadow-sm"
             >
-              {groups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-            </select>
+              <Users className="size-3.5" />
+              <span>Menú</span>
+            </Button>
           </div>
         )}
 
@@ -125,19 +133,6 @@ export function Navbar() {
                 </Button>
               )}
 
-              {/* Theme Toggle */}
-              <button
-                onClick={toggleTheme}
-                aria-label="Cambiar tema"
-                className="flex items-center justify-center size-8 rounded-lg border border-input hover:bg-muted text-foreground transition active:scale-95 shrink-0"
-              >
-                {theme === "light" ? (
-                  <Moon className="size-4 fill-foreground/10" />
-                ) : (
-                  <Sun className="size-4 text-accent" />
-                )}
-              </button>
-
               {/* User profile (Desktop only) */}
               <div className="hidden md:flex items-center gap-1.5">
                 <Button variant="ghost" size="sm" asChild>
@@ -164,6 +159,19 @@ export function Navbar() {
               </Button>
             </>
           )}
+
+          {/* Theme Toggle — always visible regardless of auth state */}
+          <button
+            onClick={toggleTheme}
+            aria-label="Cambiar tema"
+            className="flex items-center justify-center size-8 rounded-lg border border-input hover:bg-muted text-foreground transition active:scale-95 shrink-0"
+          >
+            {theme === "light" ? (
+              <Moon className="size-4 fill-foreground/10" />
+            ) : (
+              <Sun className="size-4 text-accent" />
+            )}
+          </button>
         </nav>
       </div>
     </header>

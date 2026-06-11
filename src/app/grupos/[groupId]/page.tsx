@@ -1,8 +1,7 @@
-import Image from "next/image";
+import { GroupImageEditor } from "@/components/groups/group-image-editor";
 import { GroupActions } from "@/components/groups/group-actions";
 import { GroupNav } from "@/components/groups/group-nav";
 import { InviteInfo } from "@/components/groups/invite-info";
-import { DEFAULT_GROUP_IMAGE } from "@/lib/constants/groups";
 import { requireAuthenticatedUser, requireGroupAccess } from "@/lib/groups/access";
 import { getInviteLink, isInviteActive } from "@/lib/invite-code";
 import { db } from "@/lib/db";
@@ -28,12 +27,11 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-10">
       <div className="flex flex-wrap items-start gap-4">
-        <Image
-          src={group.image || DEFAULT_GROUP_IMAGE}
-          alt={group.name}
-          width={80}
-          height={80}
-          className="size-20 rounded-2xl object-cover"
+        <GroupImageEditor
+          groupId={groupId}
+          image={group.image}
+          name={group.name}
+          isAdmin={isAdmin}
         />
         <div className="min-w-0 flex-1 space-y-1">
           <h1 className="text-3xl font-semibold tracking-tight">{group.name}</h1>
