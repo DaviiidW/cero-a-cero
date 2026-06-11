@@ -106,7 +106,8 @@ function mapJornada(stage: string, matchday: number | null): number {
 }
 
 function getNinetyMinuteScore(match: FootballDataMatch) {
-  if (match.status !== "FINISHED") {
+  const isLiveOrFinished = ["LIVE", "IN_PLAY", "PAUSED", "FINISHED"].includes(match.status);
+  if (!isLiveOrFinished) {
     return { homeGoals: null, awayGoals: null };
   }
 
@@ -185,17 +186,36 @@ export async function syncMatchesFromFootballData() {
 
     const existing = await db.match.findUnique({
       where: { externalId: apiMatch.id },
-      select: { id: true, status: true },
+      select: { id: true, status: true, homeGoals: true, awayGoals: true },
     });
 
     if (existing) {
+      let finalStatus = status;
+      let finalHomeGoals = homeGoals;
+      let finalAwayGoals = awayGoals;
+
+      if (status === MatchStatus.SCHEDULED) {
+        if (existing.status === MatchStatus.LIVE || existing.status === MatchStatus.FINISHED) {
+          finalStatus = existing.status;
+        }
+        if (existing.homeGoals !== null || existing.awayGoals !== null) {
+          finalHomeGoals = existing.homeGoals;
+          finalAwayGoals = existing.awayGoals;
+        }
+      }
+
       await db.match.update({
         where: { id: existing.id },
-        data,
+        data: {
+          ...data,
+          status: finalStatus,
+          homeGoals: finalHomeGoals,
+          awayGoals: finalAwayGoals,
+        },
       });
 
       // Only score on transition to FINISHED (not on every sync)
-      if (status === MatchStatus.FINISHED && existing.status !== MatchStatus.FINISHED) {
+      if (finalStatus === MatchStatus.FINISHED && existing.status !== MatchStatus.FINISHED) {
         finishedMatchIds.push(existing.id);
       }
     } else {
@@ -255,7 +275,7 @@ export async function syncLiveMatchesOnly(): Promise<{
         },
       ],
     },
-    select: { id: true, externalId: true, status: true },
+    select: { id: true, externalId: true, status: true, homeGoals: true, awayGoals: true },
   });
 
   if (activeInDb.length === 0) {
@@ -290,10 +310,24 @@ export async function syncLiveMatchesOnly(): Promise<{
     const existing = activeDbMap.get(apiMatch.id) ??
       await db.match.findUnique({
         where: { externalId: apiMatch.id },
-        select: { id: true, status: true },
+        select: { id: true, status: true, homeGoals: true, awayGoals: true },
       });
 
     if (!existing) continue;
+
+    let finalStatus = status;
+    let finalHomeGoals = homeGoals;
+    let finalAwayGoals = awayGoals;
+
+    if (status === MatchStatus.SCHEDULED) {
+      if (existing.status === MatchStatus.LIVE || existing.status === MatchStatus.FINISHED) {
+        finalStatus = existing.status;
+      }
+      if (existing.homeGoals !== null || existing.awayGoals !== null) {
+        finalHomeGoals = existing.homeGoals;
+        finalAwayGoals = existing.awayGoals;
+      }
+    }
 
     await db.match.update({
       where: { id: existing.id },
@@ -301,14 +335,14 @@ export async function syncLiveMatchesOnly(): Promise<{
         homeTeam: homeTeamName,
         awayTeam: awayTeamName,
         date: new Date(apiMatch.utcDate),
-        status,
-        homeGoals,
-        awayGoals,
+        status: finalStatus,
+        homeGoals: finalHomeGoals,
+        awayGoals: finalAwayGoals,
       },
     });
 
     // Trigger scoring only on LIVE/SCHEDULED → FINISHED transition
-    if (status === MatchStatus.FINISHED && existing.status !== MatchStatus.FINISHED) {
+    if (finalStatus === MatchStatus.FINISHED && existing.status !== MatchStatus.FINISHED) {
       finishedMatchIds.push(existing.id);
       console.log(`[Live Sync] Partido ${existing.id} finalizado. Disparando scoring...`);
     }
