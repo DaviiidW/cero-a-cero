@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Trophy, ClipboardList, Calendar, Globe, User } from "lucide-react";
 import { useGroup } from "@/components/providers/group-provider";
@@ -10,28 +10,31 @@ export function MobileNav() {
   const { status } = useSession();
   const { selectedGroupId } = useGroup();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   if (status !== "authenticated") return null;
   if (!selectedGroupId) return null;
+
+  const fromParam = searchParams.get("from");
 
   const navItems = [
     {
       label: "Clasificación",
       href: "/",
       icon: Trophy,
-      active: pathname === "/" || pathname.startsWith("/grupos/"),
+      active: fromParam ? false : (pathname === "/" || pathname.startsWith("/grupos/")),
     },
     {
       label: "Predicciones",
       href: "/predicciones",
       icon: ClipboardList,
-      active: pathname === "/predicciones",
+      active: fromParam === "predicciones" || (fromParam ? false : pathname === "/predicciones"),
     },
     {
       label: "Calendario",
       href: "/calendario",
       icon: Calendar,
-      active: pathname === "/calendario",
+      active: fromParam === "calendario" || (fromParam ? false : pathname === "/calendario"),
     },
     {
       label: "Global",

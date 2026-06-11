@@ -1,5 +1,4 @@
-"use client";
-
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePolling } from "@/hooks/use-polling";
 import { formatScore } from "@/lib/scoring/labels";
@@ -61,6 +60,25 @@ export function MatchesListClient({ groupId }: MatchesListClientProps) {
     return response.json();
   });
 
+  // Save scroll position when navigating away
+  const handleLinkClick = () => {
+    window.sessionStorage.setItem("scroll-position-calendario", window.scrollY.toString());
+  };
+
+  // Restore scroll position
+  useEffect(() => {
+    if (!isLoading && data) {
+      const timer = setTimeout(() => {
+        const savedScroll = window.sessionStorage.getItem("scroll-position-calendario");
+        if (savedScroll) {
+          window.scrollTo(0, parseInt(savedScroll, 10));
+          window.sessionStorage.removeItem("scroll-position-calendario");
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, data]);
+
   if (isLoading && !data) {
     return (
       <div className="space-y-3">
@@ -103,8 +121,9 @@ export function MatchesListClient({ groupId }: MatchesListClientProps) {
               }`}>
                 <CardContent className="p-0">
                   <Link
-                    href={`/grupos/${groupId}/partidos/${match.id}`}
+                    href={`/grupos/${groupId}/partidos/${match.id}?from=calendario`}
                     className="flex items-center justify-between gap-4 px-4 py-3.5"
+                    onClick={handleLinkClick}
                   >
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-sm font-bold text-foreground">

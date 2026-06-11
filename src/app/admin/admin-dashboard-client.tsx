@@ -82,6 +82,12 @@ export function AdminDashboardClient() {
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
 
+  const [champion, setChampion] = useState("");
+  const [runnerUp, setRunnerUp] = useState("");
+  const [thirdPlace, setThirdPlace] = useState("");
+  const [savingResults, setSavingResults] = useState(false);
+  const [recalculating, setRecalculating] = useState(false);
+
   const fetchMatches = async () => {
     setLoading(true);
     try {
@@ -98,9 +104,68 @@ export function AdminDashboardClient() {
     }
   };
 
+  const fetchTournamentResults = async () => {
+    try {
+      const response = await fetch("/api/admin/tournament-results");
+      if (response.ok) {
+        const data = await response.json();
+        if (data.result) {
+          setChampion(data.result.champion || "");
+          setRunnerUp(data.result.runnerUp || "");
+          setThirdPlace(data.result.thirdPlace || "");
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching tournament results:", err);
+    }
+  };
+
   useEffect(() => {
     fetchMatches();
+    fetchTournamentResults();
   }, []);
+
+  const handleSaveResults = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingResults(true);
+    try {
+      const response = await fetch("/api/admin/tournament-results", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ champion, runnerUp, thirdPlace }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Error al guardar resultados.");
+      }
+      alert("Resultados oficiales del torneo guardados con éxito.");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Error al guardar.");
+    } finally {
+      setSavingResults(false);
+    }
+  };
+
+  const handleRecalculatePoints = async () => {
+    if (!confirm("¿Estás seguro de que deseas recalcular todos los puntos de las predicciones? Esto restablecerá y volverá a calcular las puntuaciones de todos los usuarios en base a las nuevas reglas 3-1-0.")) {
+      return;
+    }
+    setRecalculating(true);
+    try {
+      const response = await fetch("/api/admin/recalculate-points", {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Error al recalcular.");
+      }
+      alert(`Puntos recalculados exitosamente:\n- Partidos procesados: ${data.matchesProcessed}\n- Predicciones recalculadas: ${data.predictionsProcessed}`);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Error al recalcular.");
+    } finally {
+      setRecalculating(false);
+    }
+  };
 
   const handleSync = async () => {
     setSyncing(true);
@@ -243,8 +308,107 @@ export function AdminDashboardClient() {
     }
   };
 
+  const teamsSet = new Set<string>();
+  for (const m of matches) {
+    if (m.homeTeam && m.homeTeam !== "Por definir") teamsSet.add(m.homeTeam);
+    if (m.awayTeam && m.awayTeam !== "Por definir") teamsSet.add(m.awayTeam);
+  }
+  const teams = Array.from(teamsSet).sort();
+
   return (
     <div className="space-y-6">
+      {/* PANEL DE CONTROL DE TORNEO (RESULTADOS REALES Y RECALCULAR PUNTOS) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-card p-6 rounded-2xl border border-border shadow-sm">
+        
+        {/* Resultados oficiales */}
+        <form onSubmit={handleSaveResults} className="space-y-4">
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-1.5 select-none">
+              🏆 Resultados Oficiales del Mundial
+            </h3>
+            <p className="text-xs text-muted-foreground select-none">
+              Establece los resultados reales para calcular las predicciones especiales.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground select-none">Campeón</label>
+              <select
+                value={champion}
+                onChange={(e) => setChampion(e.target.value)}
+                className="w-full h-9 rounded-md border border-input bg-background px-2 py-1 text-xs focus:ring-2 focus:ring-ring focus:outline-none"
+              >
+                <option value="">TBD</option>
+                {teams.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground select-none">Subcampeón</label>
+              <select
+                value={runnerUp}
+                onChange={(e) => setRunnerUp(e.target.value)}
+                className="w-full h-9 rounded-md border border-input bg-background px-2 py-1 text-xs focus:ring-2 focus:ring-ring focus:outline-none"
+              >
+                <option value="">TBD</option>
+                {teams.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-muted-foreground select-none">Tercer Puesto</label>
+              <select
+                value={thirdPlace}
+                onChange={(e) => setThirdPlace(e.target.value)}
+                className="w-full h-9 rounded-md border border-input bg-background px-2 py-1 text-xs focus:ring-2 focus:ring-ring focus:outline-none"
+              >
+                <option value="">TBD</option>
+                {teams.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={savingResults}
+            className="px-4 py-2 text-xs font-bold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50 cursor-pointer animate-fade-in"
+          >
+            {savingResults ? "Guardando..." : "Guardar Resultados Oficiales"}
+          </button>
+        </form>
+
+        {/* Acciones de recalculación */}
+        <div className="space-y-4 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6 flex flex-col justify-between">
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-foreground flex items-center gap-1.5 select-none">
+              🔄 Mantenimiento y Puntuaciones
+            </h3>
+            <p className="text-xs text-muted-foreground select-none">
+              Recalcula todos los puntos de las predicciones de partidos guardados en base al nuevo sistema 3-1-0.
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={handleRecalculatePoints}
+              disabled={recalculating}
+              className="w-full sm:w-auto px-5 py-3 text-xs font-extrabold rounded-lg bg-destructive text-white hover:bg-destructive/90 transition active:scale-95 disabled:opacity-50 cursor-pointer"
+            >
+              {recalculating ? "Recalculando..." : "Recalcular Todos los Puntos (3-1-0)"}
+            </button>
+          </div>
+        </div>
+
+      </div>
+
       {/* Botones de acción y filtros */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-card p-4 rounded-2xl border border-border shadow-sm">
         <div className="flex items-center gap-3">

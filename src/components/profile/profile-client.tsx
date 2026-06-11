@@ -13,7 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { ChangePasswordForm } from "@/components/auth/change-password-form";
-import { Shield, Bell, Moon, Sun, Trash2, User as UserIcon } from "lucide-react";
+import { Shield, Bell, Moon, Sun, Trash2, User as UserIcon, LogOut } from "lucide-react";
 
 type ProfileClientProps = {
   user: {
@@ -119,9 +119,15 @@ export function ProfileClient({ user }: ProfileClientProps) {
           <div className="text-center sm:text-left space-y-1">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">{user.nickGlobal}</h1>
             <p className="text-sm text-muted-foreground">{user.email}</p>
-            <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2.5 py-0.5 rounded border border-accent/20">
-              Usuario Registrado
-            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="text-xs font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/10 hover:border-destructive/20 transition active:scale-95 flex items-center gap-1.5 px-3 h-8 rounded-lg border border-border mt-1.5 mx-auto sm:mx-0"
+            >
+              <LogOut className="size-3.5" />
+              <span>Cerrar sesión</span>
+            </Button>
           </div>
         </CardContent>
       </Card>

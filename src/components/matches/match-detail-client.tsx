@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Lock, Unlock, Calendar, Trophy, Users } from "lucide-react";
+import { Lock, Unlock, Calendar, Trophy, Users, Plus, Minus } from "lucide-react";
 
 type MatchDetailClientProps = {
   groupId: string;
@@ -58,8 +58,8 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
     }
   );
 
-  const [homeGoals, setHomeGoals] = useState<string>("");
-  const [awayGoals, setAwayGoals] = useState<string>("");
+  const [homeGoals, setHomeGoals] = useState<string>("0");
+  const [awayGoals, setAwayGoals] = useState<string>("0");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
@@ -69,8 +69,27 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
     if (data?.prediction) {
       setHomeGoals(data.prediction.predictionHomeGoals.toString());
       setAwayGoals(data.prediction.predictionAwayGoals.toString());
+    } else {
+      setHomeGoals("0");
+      setAwayGoals("0");
     }
   }, [data?.prediction]);
+
+  const adjustHomeGoals = (amount: number) => {
+    setHomeGoals((prev) => {
+      const current = prev === "" ? 0 : parseInt(prev, 10);
+      if (isNaN(current)) return "0";
+      return Math.max(0, current + amount).toString();
+    });
+  };
+
+  const adjustAwayGoals = (amount: number) => {
+    setAwayGoals((prev) => {
+      const current = prev === "" ? 0 : parseInt(prev, 10);
+      if (isNaN(current)) return "0";
+      return Math.max(0, current + amount).toString();
+    });
+  };
 
   if (isLoading && !data) {
     return (
@@ -105,8 +124,8 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
     setFormError(null);
     setFormSuccess(null);
 
-    const parsedHome = parseInt(homeGoals, 10);
-    const parsedAway = parseInt(awayGoals, 10);
+    const parsedHome = homeGoals === "" ? 0 : parseInt(homeGoals, 10);
+    const parsedAway = awayGoals === "" ? 0 : parseInt(awayGoals, 10);
 
     if (isNaN(parsedHome) || isNaN(parsedAway) || parsedHome < 0 || parsedAway < 0) {
       setFormError("Los goles deben ser números enteros mayores o iguales a 0.");
@@ -263,36 +282,108 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
                 </p>
               )
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="flex items-center justify-center gap-4">
-                  <div className="flex items-center gap-3 flex-1 justify-end">
-                    <span className="text-xs font-bold hidden md:inline text-foreground">{match.homeTeam}</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={homeGoals}
-                      onChange={(e) => setHomeGoals(e.target.value)}
-                      className="w-16 h-10 text-center font-bold text-lg rounded-xl border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary shadow-inner text-foreground"
-                      disabled={isSubmitting}
-                      placeholder="-"
-                      required
-                    />
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="flex items-center justify-center gap-4 max-w-md mx-auto">
+                  {/* Home Team Counter */}
+                  <div className="flex flex-col md:flex-row items-center gap-2 flex-1 justify-end">
+                    <span className="text-xs md:text-sm font-bold text-foreground select-none max-w-[100px] md:max-w-[120px] truncate text-center md:text-right">
+                      {match.homeTeam}
+                    </span>
+                    <div className="flex items-center bg-muted/45 p-1 rounded-xl border border-border/80 shadow-inner">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-90 shrink-0 cursor-pointer"
+                        onClick={() => adjustHomeGoals(-1)}
+                        disabled={isSubmitting || homeGoals === "0" || homeGoals === ""}
+                      >
+                        <Minus className="size-3.5" />
+                      </Button>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={homeGoals}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "" || /^\d+$/.test(val)) {
+                            setHomeGoals(val);
+                          }
+                        }}
+                        onBlur={() => {
+                          if (homeGoals === "") {
+                            setHomeGoals("0");
+                          }
+                        }}
+                        className="w-10 h-7 text-center font-extrabold text-base bg-transparent border-0 focus:outline-none focus:ring-0 text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
+                        disabled={isSubmitting}
+                        placeholder="0"
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-90 shrink-0 cursor-pointer"
+                        onClick={() => adjustHomeGoals(1)}
+                        disabled={isSubmitting}
+                      >
+                        <Plus className="size-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                  <span className="text-muted-foreground font-semibold">—</span>
-                  <div className="flex items-center gap-3 flex-1 justify-start">
-                    <input
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={awayGoals}
-                      onChange={(e) => setAwayGoals(e.target.value)}
-                      className="w-16 h-10 text-center font-bold text-lg rounded-xl border border-input bg-background focus:outline-none focus:ring-1 focus:ring-primary shadow-inner text-foreground"
-                      disabled={isSubmitting}
-                      placeholder="-"
-                      required
-                    />
-                    <span className="text-xs font-bold hidden md:inline text-foreground">{match.awayTeam}</span>
+
+                  <span className="text-muted-foreground font-semibold text-lg select-none self-end pb-3 md:pb-0 md:self-center">—</span>
+
+                  {/* Away Team Counter */}
+                  <div className="flex flex-col md:flex-row-reverse items-center gap-2 flex-1 justify-start">
+                    <span className="text-xs md:text-sm font-bold text-foreground select-none max-w-[100px] md:max-w-[120px] truncate text-center md:text-left">
+                      {match.awayTeam}
+                    </span>
+                    <div className="flex items-center bg-muted/45 p-1 rounded-xl border border-border/80 shadow-inner">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-90 shrink-0 cursor-pointer"
+                        onClick={() => adjustAwayGoals(-1)}
+                        disabled={isSubmitting || awayGoals === "0" || awayGoals === ""}
+                      >
+                        <Minus className="size-3.5" />
+                      </Button>
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={awayGoals}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "" || /^\d+$/.test(val)) {
+                            setAwayGoals(val);
+                          }
+                        }}
+                        onBlur={() => {
+                          if (awayGoals === "") {
+                            setAwayGoals("0");
+                          }
+                        }}
+                        className="w-10 h-7 text-center font-extrabold text-base bg-transparent border-0 focus:outline-none focus:ring-0 text-foreground [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0"
+                        disabled={isSubmitting}
+                        placeholder="0"
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="hover:bg-muted text-muted-foreground hover:text-foreground transition-all active:scale-90 shrink-0 cursor-pointer"
+                        onClick={() => adjustAwayGoals(1)}
+                        disabled={isSubmitting}
+                      >
+                        <Plus className="size-3.5" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
@@ -319,6 +410,9 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
                 
                 <p className="text-[10px] text-muted-foreground text-center italic select-none">
                   Puedes registrar o modificar tu predicción hasta 3 minutos antes de que empiece el partido.
+                  <span className="block mt-1 font-medium text-accent">
+                    Sistema de puntuación: +3 pts por marcador exacto, +1 pt por resultado simple (1X2).
+                  </span>
                 </p>
               </form>
             )}

@@ -4,8 +4,8 @@ import { GroupNav } from "@/components/groups/group-nav";
 import { InviteInfo } from "@/components/groups/invite-info";
 import { requireAuthenticatedUser, requireGroupAccess } from "@/lib/groups/access";
 import { getInviteLink, isInviteActive } from "@/lib/invite-code";
-import { db } from "@/lib/db";
 import { MemberRole } from "@/generated/prisma/client";
+import { getGroupRanking } from "@/lib/scoring/queries";
 
 type GroupDetailPageProps = {
   params: Promise<{ groupId: string }>;
@@ -17,10 +17,7 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
   const membership = await requireGroupAccess(user.id, groupId);
   const { group } = membership;
 
-  const points = await db.points.findMany({
-    where: { groupId },
-    orderBy: { points: "desc" },
-  });
+  const ranking = await getGroupRanking(groupId);
 
   const isAdmin = membership.role === MemberRole.ADMIN;
 
@@ -60,9 +57,9 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
       <section className="space-y-3">
         <h2 className="text-lg font-medium">Miembros</h2>
         <ul className="divide-y divide-border rounded-2xl border border-border">
-          {group.members.map((member) => {
-            const memberPoints =
-              points.find((row) => row.userId === member.userId)?.points ?? 0;
+          {ranking.map((row) => {
+            const member = group.members.find((m) => m.userId === row.userId);
+            if (!member) return null;
 
             return (
               <li
@@ -70,20 +67,21 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
                 className="flex items-center justify-between px-4 py-3"
               >
                 <div>
-                  <p className="font-medium">
-                    {member.nick}
+                  <p className="font-medium flex items-center gap-1.5">
+                    <span className="text-xs font-black text-muted-foreground select-none">#{row.position}</span>
+                    <span>{member.nick}</span>
                     {member.role === MemberRole.ADMIN ? (
-                      <span className="ml-2 text-xs text-muted-foreground">
+                      <span className="text-[10px] font-bold bg-muted text-muted-foreground px-1.5 py-0.5 rounded">
                         Admin
                       </span>
                     ) : null}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-[10px] text-muted-foreground ml-5">
                     {member.user.nickGlobal}
                   </p>
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  {memberPoints} pts
+                <span className="text-sm font-bold text-foreground">
+                  {row.points} pts
                 </span>
               </li>
             );

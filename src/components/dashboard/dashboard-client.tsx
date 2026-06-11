@@ -8,8 +8,7 @@ import { useGroup } from "@/components/providers/group-provider";
 import { GroupRankingClient } from "@/components/ranking/group-ranking-client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Trophy, Users, PlusCircle, ArrowRight, Shield } from "lucide-react";
+import { Trophy, ArrowRight } from "lucide-react";
 
 type DashboardClientProps = {
   currentUserId: string;
@@ -51,23 +50,25 @@ export function DashboardClient({ currentUserId }: DashboardClientProps) {
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
       {selectedGroup && (
         <Card className="border-border shadow-sm">
-          <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <Badge variant="gold" className="text-[9px] uppercase tracking-wider font-bold py-0.5 px-2">
-                  <Shield className="size-3 mr-1 inline" />
-                  Grupo Activo
-                </Badge>
+          <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="relative size-16 rounded-2xl overflow-hidden border border-border/80 shrink-0 select-none shadow-sm">
+                <Image
+                  src={selectedGroup.image || "/logo_0-0nobg.png"}
+                  alt={selectedGroup.name}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
               </div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">{selectedGroup.name}</h1>
-              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                <span>Código de invitación:</span>
-                <code className="bg-muted px-1.5 py-0.5 rounded text-foreground font-mono text-[11px] font-semibold">
-                  {selectedGroup.inviteCode}
-                </code>
-              </p>
+              <div className="min-w-0">
+                <h1 className="text-2xl font-black tracking-tight text-foreground truncate select-none">
+                  {selectedGroup.name}
+                </h1>
+
+              </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Button asChild size="sm" variant="outline" className="text-xs font-semibold">
                 <Link href={`/grupos/${selectedGroup.id}`}>
                   Gestionar Grupo

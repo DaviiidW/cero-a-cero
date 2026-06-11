@@ -1,13 +1,20 @@
 "use client";
 
+import { useState, Suspense } from "react";
+import { useSession } from "next-auth/react";
 import { useGroup } from "@/components/providers/group-provider";
 import { HistoryListClient } from "@/components/history/history-list-client";
-import { ClipboardList, AlertCircle } from "lucide-react";
+import { TournamentPredictionsClient } from "@/components/groups/tournament-predictions-client";
+import { ClipboardList, AlertCircle, Calendar, Trophy } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function PrediccionesPage() {
   const { selectedGroupId, selectedGroup, isLoadingGroups } = useGroup();
+  const { data: session } = useSession();
+  const [activeTab, setActiveTab] = useState<"matches" | "special">("matches");
+
+  const currentUserId = session?.user?.id;
 
   if (isLoadingGroups) {
     return (
@@ -19,6 +26,7 @@ export default function PrediccionesPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
+      {/* Cabecera */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2 select-none">
@@ -32,16 +40,63 @@ export default function PrediccionesPage() {
       </div>
 
       {selectedGroupId ? (
-        <div className="space-y-4">
-          <div className="bg-card px-4 py-2.5 rounded-xl border border-border flex items-center justify-between">
+        <div className="space-y-6">
+          {/* Info del Grupo Activo */}
+          <div className="bg-card px-4 py-2.5 rounded-xl border border-border flex items-center justify-between shadow-sm">
             <span className="text-xs font-semibold text-muted-foreground select-none">
-              Mostrando predicciones para el grupo:
+              Grupo activo:
             </span>
-            <span className="text-xs font-bold text-accent">
+            <span className="text-xs font-extrabold text-accent">
               {selectedGroup?.name}
             </span>
           </div>
-          <HistoryListClient groupId={selectedGroupId} />
+
+          {/* Selector de Pestañas */}
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-muted/65 rounded-xl border border-border/50 max-w-md mx-auto select-none">
+            <button
+              onClick={() => setActiveTab("matches")}
+              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                activeTab === "matches"
+                  ? "bg-background text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Calendar className="size-3.5" />
+              Predicciones de Partidos
+            </button>
+            <button
+              onClick={() => setActiveTab("special")}
+              className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+                activeTab === "special"
+                  ? "bg-background text-primary shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Trophy className="size-3.5" />
+              Predicciones Especiales
+            </button>
+          </div>
+
+          {/* Contenido Condicional */}
+          {activeTab === "matches" ? (
+            <Suspense fallback={
+              <div className="space-y-3">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="h-24 rounded-xl border border-border/60 animate-pulse bg-card/60" />
+                ))}
+              </div>
+            }>
+              <HistoryListClient groupId={selectedGroupId} />
+            </Suspense>
+          ) : (
+            currentUserId ? (
+              <TournamentPredictionsClient groupId={selectedGroupId} currentUserId={currentUserId} />
+            ) : (
+              <div className="text-center py-8 text-xs text-muted-foreground">
+                Cargando tu información de usuario...
+              </div>
+            )
+          )}
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-border p-10 text-center space-y-4 max-w-md mx-auto mt-8">

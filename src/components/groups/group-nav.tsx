@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 type GroupNavProps = {
   groupId: string;
-  active: "detail" | "clasificacion" | "partidos" | "predicciones";
+  active: "detail" | "clasificacion" | "partidos" | "predicciones" | "bonificaciones";
 };
 
 const items = [
@@ -11,6 +11,7 @@ const items = [
   { key: "clasificacion", href: "/clasificacion", label: "Clasificación" },
   { key: "partidos", href: "/partidos", label: "Partidos" },
   { key: "predicciones", href: "/predicciones", label: "Historial" },
+  { key: "bonificaciones", href: "/bonificaciones", label: "Especiales" },
 ] as const;
 
 export function GroupNav({ groupId, active }: GroupNavProps) {

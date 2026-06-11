@@ -13,6 +13,9 @@ type RankingResponse = {
     nick: string;
     points: number;
     position: number;
+    matchPoints?: number;
+    bonusPoints?: number;
+    exactCount?: number;
   }>;
   updatedAt: string;
 };

@@ -22,18 +22,17 @@ export function calculatePredictionPoints(
   actual: MatchScoreInput
 ): number {
   const actualResult = getResultTypeFromScore(actual.homeGoals, actual.awayGoals);
-  let points = 0;
-
-  if (prediction.resultType === actualResult) {
-    points += 1;
-  }
 
   if (
     prediction.predictionHomeGoals === actual.homeGoals &&
     prediction.predictionAwayGoals === actual.awayGoals
   ) {
-    points += 1;
+    return 3;
   }
 
-  return points;
+  if (prediction.resultType === actualResult) {
+    return 1;
+  }
+
+  return 0;
 }

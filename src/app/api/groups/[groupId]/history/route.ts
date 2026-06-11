@@ -31,7 +31,7 @@ export async function GET(_request: Request, context: RouteContext) {
       predictionHomeGoals: item.predictionHomeGoals,
       predictionAwayGoals: item.predictionAwayGoals,
       resultType: item.resultType,
-      pointsEarned: item.pointsEarned ?? 0,
+      pointsEarned: item.pointsEarned,
       match: item.match,
     })),
     updatedAt: new Date().toISOString(),

@@ -68,7 +68,7 @@ export default async function HomePage() {
 
         {/* CTA buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto pt-4 relative z-10">
-          <Button asChild size="lg" className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90 hover:scale-105 active:scale-95 transition-all font-extrabold px-10 py-6 text-lg rounded-xl shadow-xl shadow-accent/25 border-none">
+          <Button asChild size="lg" className="w-full sm:w-auto bg-[#c0392b] text-white hover:bg-[#c0392b]/90 hover:scale-105 active:scale-95 transition-all font-extrabold px-10 py-6 text-lg rounded-xl shadow-xl shadow-[#c0392b]/25 border-none">
             <Link href="/login" className="flex items-center justify-center gap-2">
               ¡Juega ahora!
               <ChevronRight className="size-5" />
@@ -115,7 +115,7 @@ export default async function HomePage() {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <CardDescription className="text-xs leading-relaxed" style={{ color: "#d0d0d0" }}>
-                Consigue 1 punto por acertar el signo ganador (1X2) y 1 punto adicional por adivinar el marcador exacto de cada partido.
+                Consigue 3 puntos por acertar el marcador exacto de un partido, o 1 punto si adivinas el ganador o el empate (1X2) pero no el marcador exacto.
               </CardDescription>
             </CardContent>
           </Card>

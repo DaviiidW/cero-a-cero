@@ -133,9 +133,9 @@ export function Navbar() {
                 </Button>
               )}
 
-              {/* User profile (Desktop only) */}
-              <div className="hidden md:flex items-center gap-1.5">
-                <Button variant="ghost" size="sm" asChild>
+              {/* User profile & LogOut */}
+              <div className="flex items-center gap-1.5">
+                <Button variant="ghost" size="sm" asChild className="hidden md:inline-flex">
                   <Link href="/perfil" className="text-xs font-semibold">
                     {session.user.nickGlobal}
                   </Link>
