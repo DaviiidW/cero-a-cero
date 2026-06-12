@@ -1,7 +1,11 @@
 import { MatchStatus } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { calculatePredictionPoints } from "@/lib/scoring/calculate";
-import { recalculateAllRankings } from "@/lib/scoring/ranking-recalc";
+import {
+  recalculateAllRankings,
+  recalculateGroupRankings,
+  recalculateGlobalRanking,
+} from "@/lib/scoring/ranking-recalc";
 
 export async function processFinishedMatchScoring(matchId: string, recalculate = true) {
   const match = await db.match.findUnique({
@@ -68,7 +72,13 @@ export async function processFinishedMatchScoring(matchId: string, recalculate =
   });
 
   if (recalculate) {
-    await recalculateAllRankings();
+    const affectedGroupIds = Array.from(new Set(predictions.map((p) => p.groupId)));
+    if (affectedGroupIds.length > 0) {
+      await recalculateGroupRankings(affectedGroupIds);
+    }
+    await db.$transaction(async (tx) => {
+      await recalculateGlobalRanking(tx);
+    });
   }
 
   return { processed: scored.length };

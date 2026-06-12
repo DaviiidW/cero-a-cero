@@ -2,36 +2,21 @@ import { MatchStatus, Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { buildRankingWithTies } from "@/lib/scoring/ranking";
 
-export async function calculateGroupRankingInternal(groupId: string, tx: Prisma.TransactionClient = db) {
-  // 1. Fetch match points for group members
-  const points = await tx.points.findMany({
-    where: { groupId },
-    include: {
-      user: {
-        select: {
-          id: true,
-          nickGlobal: true,
-          memberships: {
-            where: { groupId },
-            select: { nick: true },
-          },
-        },
-      },
-    },
-  });
+export interface SharedRecalcData {
+  tournamentResult: {
+    id: string;
+    champion: string | null;
+    runnerUp: string | null;
+    thirdPlace: string | null;
+  } | null;
+  teamStats: Map<string, { scored: number; conceded: number }>;
+}
 
-  // 2. Fetch tournament predictions for the group
-  const predictions = await tx.tournamentPrediction.findMany({
-    where: { groupId },
-  });
-  const predictionsMap = new Map(predictions.map((p) => [p.userId, p]));
-
-  // 3. Fetch tournament result singleton
-  const result = await tx.tournamentResult.findUnique({
+export async function fetchSharedRecalcData(tx: Prisma.TransactionClient = db): Promise<SharedRecalcData> {
+  const tournamentResult = await tx.tournamentResult.findUnique({
     where: { id: "singleton" },
   });
 
-  // 4. Fetch finished matches and calculate team stats for worst team calculation
   const finishedMatches = await tx.match.findMany({
     where: {
       status: MatchStatus.FINISHED,
@@ -57,6 +42,77 @@ export async function calculateGroupRankingInternal(groupId: string, tx: Prisma.
     const awayStat = teamStats.get(away)!;
     awayStat.scored += ag;
     awayStat.conceded += hg;
+  }
+
+  return { tournamentResult, teamStats };
+}
+
+export async function calculateGroupRankingInternal(
+  groupId: string,
+  tx: Prisma.TransactionClient = db,
+  sharedData?: SharedRecalcData
+) {
+  // 1. Fetch match points for group members
+  const points = await tx.points.findMany({
+    where: { groupId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          nickGlobal: true,
+          memberships: {
+            where: { groupId },
+            select: { nick: true },
+          },
+        },
+      },
+    },
+  });
+
+  // 2. Fetch tournament predictions for the group
+  const predictions = await tx.tournamentPrediction.findMany({
+    where: { groupId },
+  });
+  const predictionsMap = new Map(predictions.map((p) => [p.userId, p]));
+
+  // 3. Fetch tournament result singleton
+  const result = sharedData
+    ? sharedData.tournamentResult
+    : await tx.tournamentResult.findUnique({
+        where: { id: "singleton" },
+      });
+
+  // 4. Fetch finished matches and calculate team stats for worst team calculation
+  let teamStats: Map<string, { scored: number; conceded: number }>;
+  if (sharedData) {
+    teamStats = sharedData.teamStats;
+  } else {
+    const finishedMatches = await tx.match.findMany({
+      where: {
+        status: MatchStatus.FINISHED,
+        homeGoals: { not: null },
+        awayGoals: { not: null },
+      },
+    });
+
+    teamStats = new Map<string, { scored: number; conceded: number }>();
+    for (const m of finishedMatches) {
+      const home = m.homeTeam;
+      const away = m.awayTeam;
+      const hg = m.homeGoals!;
+      const ag = m.awayGoals!;
+
+      if (!teamStats.has(home)) teamStats.set(home, { scored: 0, conceded: 0 });
+      if (!teamStats.has(away)) teamStats.set(away, { scored: 0, conceded: 0 });
+
+      const homeStat = teamStats.get(home)!;
+      homeStat.scored += hg;
+      homeStat.conceded += ag;
+
+      const awayStat = teamStats.get(away)!;
+      awayStat.scored += ag;
+      awayStat.conceded += hg;
+    }
   }
 
   // 5. Fetch exact match counts (3 points predictions)
@@ -123,43 +179,53 @@ export async function calculateGroupRankingInternal(groupId: string, tx: Prisma.
   return buildRankingWithTies(entries);
 }
 
-export async function calculateGlobalRankingInternal(tx: Prisma.TransactionClient = db) {
+export async function calculateGlobalRankingInternal(
+  tx: Prisma.TransactionClient = db,
+  sharedData?: SharedRecalcData
+) {
   const aggregated = await tx.points.groupBy({
     by: ["userId"],
     _sum: { points: true },
   });
 
   // Fetch tournament result
-  const result = await tx.tournamentResult.findUnique({
-    where: { id: "singleton" },
-  });
+  const result = sharedData
+    ? sharedData.tournamentResult
+    : await tx.tournamentResult.findUnique({
+        where: { id: "singleton" },
+      });
 
   // Fetch team stats
-  const finishedMatches = await tx.match.findMany({
-    where: {
-      status: MatchStatus.FINISHED,
-      homeGoals: { not: null },
-      awayGoals: { not: null },
-    },
-  });
+  let teamStats: Map<string, { scored: number; conceded: number }>;
+  if (sharedData) {
+    teamStats = sharedData.teamStats;
+  } else {
+    const finishedMatches = await tx.match.findMany({
+      where: {
+        status: MatchStatus.FINISHED,
+        homeGoals: { not: null },
+        awayGoals: { not: null },
+      },
+    });
 
-  const teamStats = new Map<string, { scored: number; conceded: number }>();
-  for (const m of finishedMatches) {
-    const home = m.homeTeam;
-    const away = m.awayTeam;
-    const hg = m.homeGoals!;
-    const ag = m.awayGoals!;
+    teamStats = new Map<string, { scored: number; conceded: number }>();
+    for (const m of finishedMatches) {
+      const home = m.homeTeam;
+      const away = m.awayTeam;
+      const hg = m.homeGoals!;
+      const ag = m.awayGoals!;
 
-    if (!teamStats.has(home)) teamStats.set(home, { scored: 0, conceded: 0 });
-    if (!teamStats.has(away)) teamStats.set(away, { scored: 0, conceded: 0 });
+      if (!teamStats.has(home)) teamStats.set(home, { scored: 0, conceded: 0 });
+      if (!teamStats.has(away)) teamStats.set(away, { scored: 0, conceded: 0 });
 
-    const homeStat = teamStats.get(home)!;
-    homeStat.scored += hg;
-    homeStat.conceded += ag;
+      const homeStat = teamStats.get(home)!;
+      homeStat.scored += hg;
+      homeStat.conceded += ag;
 
-    const awayStat = teamStats.get(away)!;
-    awayStat.scored += ag;
-    awayStat.conceded += hg;
+      const awayStat = teamStats.get(away)!;
+      awayStat.scored += ag;
+      awayStat.conceded += hg;
+    }
   }
 
   // Fetch all tournament predictions
@@ -233,8 +299,12 @@ export async function calculateGlobalRankingInternal(tx: Prisma.TransactionClien
   return buildRankingWithTies(entries);
 }
 
-export async function recalculateGroupRanking(groupId: string, tx: Prisma.TransactionClient = db) {
-  const ranking = await calculateGroupRankingInternal(groupId, tx);
+export async function recalculateGroupRanking(
+  groupId: string,
+  tx: Prisma.TransactionClient = db,
+  sharedData?: SharedRecalcData
+) {
+  const ranking = await calculateGroupRankingInternal(groupId, tx, sharedData);
 
   // Clean old rankings for this group
   await tx.groupRanking.deleteMany({
@@ -262,8 +332,11 @@ export async function recalculateGroupRanking(groupId: string, tx: Prisma.Transa
   }
 }
 
-export async function recalculateGlobalRanking(tx: Prisma.TransactionClient = db) {
-  const ranking = await calculateGlobalRankingInternal(tx);
+export async function recalculateGlobalRanking(
+  tx: Prisma.TransactionClient = db,
+  sharedData?: SharedRecalcData
+) {
+  const ranking = await calculateGlobalRankingInternal(tx, sharedData);
 
   // Clean old rankings
   await tx.globalRanking.deleteMany();
@@ -284,17 +357,33 @@ export async function recalculateGlobalRanking(tx: Prisma.TransactionClient = db
   }
 }
 
+export async function recalculateGroupRankings(groupIds: string[]) {
+  if (groupIds.length === 0) return;
+
+  const sharedData = await fetchSharedRecalcData(db);
+
+  for (const groupId of groupIds) {
+    await db.$transaction(async (tx) => {
+      await recalculateGroupRanking(groupId, tx, sharedData);
+    });
+  }
+}
+
 export async function recalculateAllRankings() {
+  const sharedData = await fetchSharedRecalcData(db);
+
+  // 1. Fetch all groups
+  const groups = await db.group.findMany({ select: { id: true } });
+
+  // 2. Recalculate each group ranking inside its own transaction
+  for (const g of groups) {
+    await db.$transaction(async (tx) => {
+      await recalculateGroupRanking(g.id, tx, sharedData);
+    });
+  }
+
+  // 3. Recalculate global ranking inside its own transaction
   await db.$transaction(async (tx) => {
-    // 1. Fetch all groups
-    const groups = await tx.group.findMany({ select: { id: true } });
-
-    // 2. Recalculate each group's ranking
-    for (const g of groups) {
-      await recalculateGroupRanking(g.id, tx);
-    }
-
-    // 3. Recalculate global ranking
-    await recalculateGlobalRanking(tx);
+    await recalculateGlobalRanking(tx, sharedData);
   });
 }
