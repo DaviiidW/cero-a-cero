@@ -89,6 +89,10 @@ export function AdminDashboardClient() {
   const [savingResults, setSavingResults] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
 
+  const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState("");
+  const [recalculatingGroup, setRecalculatingGroup] = useState(false);
+
   const fetchMatches = async () => {
     setLoading(true);
     try {
@@ -121,10 +125,51 @@ export function AdminDashboardClient() {
     }
   };
 
+  const fetchGroups = async () => {
+    try {
+      const response = await fetch("/api/admin/groups");
+      if (response.ok) {
+        const data = await response.json();
+        setGroups(data.groups || []);
+        if (data.groups && data.groups.length > 0) {
+          setSelectedGroupId(data.groups[0].id);
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching groups:", err);
+    }
+  };
+
   useEffect(() => {
     fetchMatches();
     fetchTournamentResults();
+    fetchGroups();
   }, []);
+
+  const handleRecalculateGroupRanking = async () => {
+    if (!selectedGroupId) return;
+    const groupName = groups.find((g) => g.id === selectedGroupId)?.name || "este grupo";
+    if (!confirm(`¿Estás seguro de que deseas recalcular la clasificación del grupo "${groupName}"?`)) {
+      return;
+    }
+    setRecalculatingGroup(true);
+    try {
+      const response = await fetch("/api/admin/recalculate-group-ranking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ groupId: selectedGroupId }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Error al recalcular.");
+      }
+      alert(data.message || "Clasificación recalculada con éxito.");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Error al recalcular.");
+    } finally {
+      setRecalculatingGroup(false);
+    }
+  };
 
   const handleSaveResults = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -387,24 +432,61 @@ export function AdminDashboardClient() {
 
         {/* Acciones de recalculación */}
         <div className="space-y-4 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6 flex flex-col justify-between">
-          <div className="space-y-1">
-            <h3 className="text-base font-bold text-foreground flex items-center gap-1.5 select-none">
-              🔄 Mantenimiento y Puntuaciones
-            </h3>
-            <p className="text-xs text-muted-foreground select-none">
-              Recalcula todos los puntos de las predicciones de partidos guardados en base al nuevo sistema 4-1-0.
-            </p>
-          </div>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-1.5 select-none">
+                🔄 Mantenimiento y Puntuaciones
+              </h3>
+              <p className="text-xs text-muted-foreground select-none">
+                Recalcula todos los puntos de las predicciones de partidos guardados en base al nuevo sistema 4-1-0.
+              </p>
+            </div>
 
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={handleRecalculatePoints}
-              disabled={recalculating}
-              className="w-full sm:w-auto px-5 py-3 text-xs font-extrabold rounded-lg bg-destructive text-white hover:bg-destructive/90 transition active:scale-95 disabled:opacity-50 cursor-pointer"
-            >
-              {recalculating ? "Recalculando..." : "Recalcular Todos los Puntos (4-1-0)"}
-            </button>
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={handleRecalculatePoints}
+                disabled={recalculating}
+                className="w-full sm:w-auto px-5 py-2.5 text-xs font-extrabold rounded-lg bg-destructive text-white hover:bg-destructive/90 transition active:scale-95 disabled:opacity-50 cursor-pointer"
+              >
+                {recalculating ? "Recalculando..." : "Recalcular Todos los Puntos (4-1-0)"}
+              </button>
+            </div>
+
+            {/* Recalcular grupo específico */}
+            {groups.length > 0 && (
+              <div className="pt-4 border-t border-border space-y-3">
+                <div className="space-y-1">
+                  <h4 className="text-xs font-bold text-foreground select-none">
+                    🎯 Recalcular Grupo Individual
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground select-none">
+                    Recalcula y actualiza la clasificación de un único grupo específico.
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <select
+                    value={selectedGroupId}
+                    onChange={(e) => setSelectedGroupId(e.target.value)}
+                    className="flex-1 h-9 rounded-md border border-input bg-background px-2 py-1 text-xs focus:ring-2 focus:ring-ring focus:outline-none"
+                  >
+                    {groups.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={handleRecalculateGroupRanking}
+                    disabled={recalculatingGroup || !selectedGroupId}
+                    className="px-4 py-2 text-xs font-bold rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/90 transition disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                  >
+                    {recalculatingGroup ? "Recalculando..." : "Recalcular Grupo"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
