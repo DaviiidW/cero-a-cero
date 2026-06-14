@@ -306,7 +306,7 @@ export async function syncLiveMatchesOnly(): Promise<{
   const now = new Date();
 
   // Step 1: Check our DB for matches that should be active right now
-  // Includes finished matches with missing/null goals
+  // Includes finished matches with missing/null goals OR unscored predictions (recovery)
   const activeInDb = await db.match.findMany({
     where: {
       OR: [
@@ -321,6 +321,15 @@ export async function syncLiveMatchesOnly(): Promise<{
             { homeGoals: null },
             { awayGoals: null },
           ],
+        },
+        // Recovery: FINISHED matches with goals but still have unscored predictions
+        {
+          status: MatchStatus.FINISHED,
+          homeGoals: { not: null },
+          awayGoals: { not: null },
+          predictions: {
+            some: { scoredAt: null },
+          },
         },
       ],
     },
@@ -391,15 +400,22 @@ export async function syncLiveMatchesOnly(): Promise<{
       },
     });
 
-    // Trigger scoring on transition to FINISHED or when goals are updated from null to a number
+    // Trigger scoring on transition to FINISHED, when goals are updated from null,
+    // OR when the match is already FINISHED with goals but has unscored predictions (recovery)
     const becameFinished = finalStatus === MatchStatus.FINISHED && existing.status !== MatchStatus.FINISHED;
     const goalsPopulated = finalStatus === MatchStatus.FINISHED &&
                            (existing.homeGoals === null || existing.awayGoals === null) &&
                            (finalHomeGoals !== null && finalAwayGoals !== null);
+    // Recovery: already FINISHED with goals but the match is in our activeInDb (has unscored predictions)
+    const hasUnscoredPredictions = finalStatus === MatchStatus.FINISHED &&
+                                   finalHomeGoals !== null && finalAwayGoals !== null &&
+                                   activeDbMap.has(apiMatch.id);
 
-    if (becameFinished || goalsPopulated) {
-      finishedMatchIds.push(existing.id);
-      console.log(`[Live Sync] Partido ${existing.id} finalizado y puntuado. Disparando scoring...`);
+    if (becameFinished || goalsPopulated || hasUnscoredPredictions) {
+      if (!finishedMatchIds.includes(existing.id)) {
+        finishedMatchIds.push(existing.id);
+      }
+      console.log(`[Live Sync] Partido ${existing.id}: disparando scoring (becameFinished=${becameFinished}, goalsPopulated=${goalsPopulated}, recovery=${hasUnscoredPredictions}).`);
     }
 
     upserted += 1;

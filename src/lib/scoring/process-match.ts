@@ -28,7 +28,25 @@ export async function processFinishedMatchScoring(matchId: string, recalculate =
     },
   });
 
+  // If no unscored predictions remain, still recalculate rankings in case a
+  // previous run scored predictions but failed before updating the ranking tables.
   if (predictions.length === 0) {
+    if (recalculate) {
+      // Check if there are any scored predictions for this match to decide
+      // whether rankings might be stale (avoids unnecessary work).
+      const hasScoredPredictions = await db.prediction.count({
+        where: { matchId, scoredAt: { not: null } },
+      });
+      if (hasScoredPredictions > 0) {
+        const affectedGroupIds = await db.prediction
+          .findMany({ where: { matchId }, select: { groupId: true } })
+          .then((rows) => Array.from(new Set(rows.map((r) => r.groupId))));
+        if (affectedGroupIds.length > 0) {
+          await recalculateGroupRankings(affectedGroupIds);
+        }
+        await recalculateGlobalRanking(db);
+      }
+    }
     return { processed: 0 };
   }
 
@@ -79,9 +97,7 @@ export async function processFinishedMatchScoring(matchId: string, recalculate =
     if (affectedGroupIds.length > 0) {
       await recalculateGroupRankings(affectedGroupIds);
     }
-    await db.$transaction(async (tx) => {
-      await recalculateGlobalRanking(tx);
-    });
+    await recalculateGlobalRanking(db);
   }
 
   return { processed: scored.length };
