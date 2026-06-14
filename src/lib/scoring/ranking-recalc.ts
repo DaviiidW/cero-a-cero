@@ -365,6 +365,9 @@ export async function recalculateGroupRankings(groupIds: string[]) {
   for (const groupId of groupIds) {
     await db.$transaction(async (tx) => {
       await recalculateGroupRanking(groupId, tx, sharedData);
+    }, {
+      maxWait: 10000,
+      timeout: 30000,
     });
   }
 }
@@ -379,11 +382,17 @@ export async function recalculateAllRankings() {
   for (const g of groups) {
     await db.$transaction(async (tx) => {
       await recalculateGroupRanking(g.id, tx, sharedData);
+    }, {
+      maxWait: 10000,
+      timeout: 30000,
     });
   }
 
   // 3. Recalculate global ranking inside its own transaction
   await db.$transaction(async (tx) => {
     await recalculateGlobalRanking(tx, sharedData);
+  }, {
+    maxWait: 15000,
+    timeout: 30000,
   });
 }

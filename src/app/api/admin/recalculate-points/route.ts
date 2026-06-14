@@ -12,8 +12,9 @@ export async function POST() {
   }
 
   try {
-    const result = await db.$transaction(async (tx) => {
-      // 1. Reset all prediction points
+    const result = await db.$transaction(
+      async (tx) => {
+        // 1. Reset all prediction points
       await tx.prediction.updateMany({
         data: {
           pointsEarned: null,
@@ -86,6 +87,9 @@ export async function POST() {
         matchesProcessed: finishedMatches.length,
         predictionsProcessed: updatedPredictionsCount,
       };
+    }, {
+      maxWait: 15000,
+      timeout: 60000,
     });
 
     await recalculateAllRankings();

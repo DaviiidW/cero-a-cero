@@ -69,6 +69,9 @@ export async function processFinishedMatchScoring(matchId: string, recalculate =
         },
       });
     }
+  }, {
+    maxWait: 10000,
+    timeout: 30000,
   });
 
   if (recalculate) {
