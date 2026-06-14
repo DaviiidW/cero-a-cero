@@ -1,0 +1,17 @@
+name: Sincronización de Partidos en Vivo
+
+on:
+  schedule:
+    # Se ejecuta cada 10 minutos (límite razonable para GitHub Actions gratis)
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Permite disparar la sincronización manualmente desde GitHub
+
+jobs:
+  sync-matches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Llamar al endpoint de sincronización
+        run: |
+          curl -X GET "https://cero-a-cero-hu3u.vercel.app/api/cron/sync-live-matches" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            --fail
