@@ -400,7 +400,14 @@ export function HistoryListClient({ groupId }: HistoryListClientProps) {
                                 <span className="text-[9px] font-bold uppercase tracking-wider mt-0.5">puntos</span>
                               </div>
                             ) : (
-                              isLive || (new Date(item.match.date).getTime() - new Date().getTime() < 3 * 60 * 1000) ? (
+                              isFinished ? (
+                                <Badge 
+                                  variant="secondary" 
+                                  className="text-[10px] font-bold uppercase tracking-wider py-0.5 px-2.5 border rounded-lg bg-muted text-muted-foreground border-border"
+                                >
+                                  Finalizado
+                                </Badge>
+                              ) : isLive || (new Date(item.match.date).getTime() - new Date().getTime() < 3 * 60 * 1000) ? (
                                 <Badge 
                                   variant="secondary" 
                                   className="text-[10px] font-bold uppercase tracking-wider py-0.5 px-2.5 border rounded-lg bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse"
