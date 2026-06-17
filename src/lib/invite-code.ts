@@ -42,7 +42,18 @@ export function getInviteExpiryDate(from = new Date()): Date {
 }
 
 export function getInviteLink(inviteCode: string): string {
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://cero-a-cero-hu3u.vercel.app";
+  let baseUrl = "https://cero-a-cero-hu3u.vercel.app";
+
+  if (process.env.NEXTAUTH_URL && !process.env.NEXTAUTH_URL.includes("localhost")) {
+    baseUrl = process.env.NEXTAUTH_URL;
+  } else if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    baseUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  } else if (process.env.VERCEL_URL) {
+    baseUrl = `https://${process.env.VERCEL_URL}`;
+  } else if (process.env.NEXTAUTH_URL) {
+    baseUrl = process.env.NEXTAUTH_URL;
+  }
+
   const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
   return `${cleanBaseUrl}/unirse/${inviteCode}`;
 }

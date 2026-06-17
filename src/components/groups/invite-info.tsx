@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { getWhatsAppShareLink } from "@/lib/groups/share";
 
@@ -31,7 +31,16 @@ export function InviteInfo({
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const whatsAppLink = getWhatsAppShareLink(groupName, inviteCode, inviteLink);
+  const [origin, setOrigin] = useState("");
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  const displayInviteLink = origin 
+    ? `${origin}/unirse/${inviteCode}` 
+    : inviteLink;
+
+  const whatsAppLink = getWhatsAppShareLink(groupName, inviteCode, displayInviteLink);
 
   async function copy(value: string, type: "code" | "link") {
     await navigator.clipboard.writeText(value);
@@ -99,12 +108,12 @@ export function InviteInfo({
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
-          {inviteLink}
+          {displayInviteLink}
         </span>
         <Button
           variant="outline"
           size="sm"
-          onClick={() => copy(inviteLink, "link")}
+          onClick={() => copy(displayInviteLink, "link")}
         >
           {copied === "link" ? "Copiado" : "Copiar enlace"}
         </Button>
