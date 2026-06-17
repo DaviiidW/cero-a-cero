@@ -41,10 +41,14 @@ export async function GET(request: Request) {
       message: `Sincronizados ${result.matchesSynced} partidos. ${result.finishedMatchesScored} finalizados con scoring.`,
       result,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("[Cron] Error en sync-live-matches:", error);
     return NextResponse.json(
-      { error: "Error interno en la sincronización" },
+      {
+        error: "Error interno en la sincronización",
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      },
       { status: 500 }
     );
   }
