@@ -2,9 +2,8 @@ name: Sincronización de Partidos en Vivo
 
 on:
   schedule:
-    # Se ejecuta cada 10 minutos (límite razonable para GitHub Actions gratis)
     - cron: '*/10 * * * *'
-  workflow_dispatch: # Permite disparar la sincronización manualmente desde GitHub
+  workflow_dispatch:
 
 jobs:
   sync-matches:
