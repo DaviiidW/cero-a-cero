@@ -434,7 +434,7 @@ export function HistoryListClient({ groupId }: HistoryListClientProps) {
       )}
       {data?.updatedAt ? (
         <p className="text-[10px] text-muted-foreground text-right italic select-none">
-          Última actualización: {new Date(data.updatedAt).toLocaleTimeString("es-ES")} (auto-update 30s)
+          Última actualización: {new Date(data.updatedAt).toLocaleTimeString("es-ES")}
         </p>
       ) : null}
     </div>
