@@ -42,6 +42,57 @@ const JORNADAS = [
   { id: 8, label: "Tercer puesto y Final (J8)" },
 ];
 
+const AVAILABLE_FLAGS = [
+  { name: "Alemania", path: "/flags/alemania.svg" },
+  { name: "Arabia Saudita", path: "/flags/arabia-saudita.svg" },
+  { name: "Argelia", path: "/flags/argelia.svg" },
+  { name: "Argentina", path: "/flags/argentina.png" },
+  { name: "Australia", path: "/flags/australia.svg" },
+  { name: "Austria", path: "/flags/austria.svg" },
+  { name: "Bélgica", path: "/flags/b-lgica.svg" },
+  { name: "Bosnia y Herzegovina", path: "/flags/bosnia-y-herzegovina.svg" },
+  { name: "Brasil", path: "/flags/brasil.svg" },
+  { name: "Cabo Verde", path: "/flags/cabo-verde.svg" },
+  { name: "Canadá", path: "/flags/canad-.svg" },
+  { name: "Catar", path: "/flags/catar.svg" },
+  { name: "Colombia", path: "/flags/colombia.svg" },
+  { name: "Corea del Sur", path: "/flags/corea-del-sur.png" },
+  { name: "Costa de Marfil", path: "/flags/costa-de-marfil.svg" },
+  { name: "Croacia", path: "/flags/croacia.svg" },
+  { name: "Curazao", path: "/flags/curazao.svg" },
+  { name: "Ecuador", path: "/flags/ecuador.svg" },
+  { name: "Egipto", path: "/flags/egipto.svg" },
+  { name: "Escocia", path: "/flags/escocia.svg" },
+  { name: "España", path: "/flags/espa-a.svg" },
+  { name: "Estados Unidos", path: "/flags/estados-unidos.svg" },
+  { name: "Francia", path: "/flags/francia.svg" },
+  { name: "Ghana", path: "/flags/ghana.svg" },
+  { name: "Haití", path: "/flags/hait-.svg" },
+  { name: "Inglaterra", path: "/flags/inglaterra.svg" },
+  { name: "Irán", path: "/flags/ir-n.svg" },
+  { name: "Irak", path: "/flags/irak.svg" },
+  { name: "Japón", path: "/flags/jap-n.svg" },
+  { name: "Jordania", path: "/flags/jordania.png" },
+  { name: "México", path: "/flags/m-xico.svg" },
+  { name: "Marruecos", path: "/flags/marruecos.svg" },
+  { name: "Noruega", path: "/flags/noruega.svg" },
+  { name: "Nueva Zelanda", path: "/flags/nueva-zelanda.svg" },
+  { name: "Países Bajos", path: "/flags/pa-ses-bajos.svg" },
+  { name: "Panamá", path: "/flags/panam-.svg" },
+  { name: "Paraguay", path: "/flags/paraguay.svg" },
+  { name: "Portugal", path: "/flags/portugal.svg" },
+  { name: "República Checa", path: "/flags/rep-blica-checa.svg" },
+  { name: "R.D. Congo", path: "/flags/rep-blica-democr-tica-del-congo.svg" },
+  { name: "Senegal", path: "/flags/senegal.svg" },
+  { name: "Sudáfrica", path: "/flags/sud-frica.svg" },
+  { name: "Suecia", path: "/flags/suecia.svg" },
+  { name: "Suiza", path: "/flags/suiza.svg" },
+  { name: "Túnez", path: "/flags/t-nez.svg" },
+  { name: "Turquía", path: "/flags/turqu-a.svg" },
+  { name: "Uruguay", path: "/flags/uruguay.svg" },
+  { name: "Uzbekistán", path: "/flags/uzbekist-n.png" },
+];
+
 export function AdminDashboardClient() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -673,23 +724,53 @@ export function AdminDashboardClient() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="font-medium">Bandera Local (URL crest)</label>
+                  <label className="font-medium">Bandera Local</label>
+                  <div className="flex gap-2 items-center">
+                    {createForm.homeTeamCrest && (
+                      <img src={createForm.homeTeamCrest} alt="preview" className="h-6 w-9 object-cover rounded border border-muted/50 shrink-0 bg-background" />
+                    )}
+                    <select
+                      value={AVAILABLE_FLAGS.some(f => f.path === createForm.homeTeamCrest) ? createForm.homeTeamCrest : ""}
+                      onChange={(e) => setCreateForm({ ...createForm, homeTeamCrest: e.target.value })}
+                      className="flex-1 h-9 rounded-md border border-input bg-background px-2 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-xs"
+                    >
+                      <option value="">Seleccionar del listado...</option>
+                      {AVAILABLE_FLAGS.map((flag) => (
+                        <option key={flag.path} value={flag.path}>{flag.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <input
                     type="text"
                     value={createForm.homeTeamCrest}
                     onChange={(e) => setCreateForm({ ...createForm, homeTeamCrest: e.target.value })}
-                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-xs"
-                    placeholder="https://..."
+                    className="w-full h-8 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-[10px] text-muted-foreground"
+                    placeholder="O introduce una URL de bandera..."
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="font-medium">Bandera Visitante (URL crest)</label>
+                  <label className="font-medium">Bandera Visitante</label>
+                  <div className="flex gap-2 items-center">
+                    {createForm.awayTeamCrest && (
+                      <img src={createForm.awayTeamCrest} alt="preview" className="h-6 w-9 object-cover rounded border border-muted/50 shrink-0 bg-background" />
+                    )}
+                    <select
+                      value={AVAILABLE_FLAGS.some(f => f.path === createForm.awayTeamCrest) ? createForm.awayTeamCrest : ""}
+                      onChange={(e) => setCreateForm({ ...createForm, awayTeamCrest: e.target.value })}
+                      className="flex-1 h-9 rounded-md border border-input bg-background px-2 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-xs"
+                    >
+                      <option value="">Seleccionar del listado...</option>
+                      {AVAILABLE_FLAGS.map((flag) => (
+                        <option key={flag.path} value={flag.path}>{flag.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <input
                     type="text"
                     value={createForm.awayTeamCrest}
                     onChange={(e) => setCreateForm({ ...createForm, awayTeamCrest: e.target.value })}
-                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-xs"
-                    placeholder="https://..."
+                    className="w-full h-8 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-[10px] text-muted-foreground"
+                    placeholder="O introduce una URL de bandera..."
                   />
                 </div>
               </div>
@@ -852,21 +933,53 @@ export function AdminDashboardClient() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="font-medium">Bandera Local (URL crest)</label>
+                  <label className="font-medium">Bandera Local</label>
+                  <div className="flex gap-2 items-center">
+                    {editForm.homeTeamCrest && (
+                      <img src={editForm.homeTeamCrest} alt="preview" className="h-6 w-9 object-cover rounded border border-muted/50 shrink-0 bg-background" />
+                    )}
+                    <select
+                      value={AVAILABLE_FLAGS.some(f => f.path === editForm.homeTeamCrest) ? editForm.homeTeamCrest : ""}
+                      onChange={(e) => setEditForm({ ...editForm, homeTeamCrest: e.target.value })}
+                      className="flex-1 h-9 rounded-md border border-input bg-background px-2 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-xs"
+                    >
+                      <option value="">Seleccionar del listado...</option>
+                      {AVAILABLE_FLAGS.map((flag) => (
+                        <option key={flag.path} value={flag.path}>{flag.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <input
                     type="text"
                     value={editForm.homeTeamCrest}
                     onChange={(e) => setEditForm({ ...editForm, homeTeamCrest: e.target.value })}
-                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-xs"
+                    className="w-full h-8 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-[10px] text-muted-foreground"
+                    placeholder="O introduce una URL de bandera..."
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="font-medium">Bandera Visitante (URL crest)</label>
+                  <label className="font-medium">Bandera Visitante</label>
+                  <div className="flex gap-2 items-center">
+                    {editForm.awayTeamCrest && (
+                      <img src={editForm.awayTeamCrest} alt="preview" className="h-6 w-9 object-cover rounded border border-muted/50 shrink-0 bg-background" />
+                    )}
+                    <select
+                      value={AVAILABLE_FLAGS.some(f => f.path === editForm.awayTeamCrest) ? editForm.awayTeamCrest : ""}
+                      onChange={(e) => setEditForm({ ...editForm, awayTeamCrest: e.target.value })}
+                      className="flex-1 h-9 rounded-md border border-input bg-background px-2 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-xs"
+                    >
+                      <option value="">Seleccionar del listado...</option>
+                      {AVAILABLE_FLAGS.map((flag) => (
+                        <option key={flag.path} value={flag.path}>{flag.name}</option>
+                      ))}
+                    </select>
+                  </div>
                   <input
                     type="text"
                     value={editForm.awayTeamCrest}
                     onChange={(e) => setEditForm({ ...editForm, awayTeamCrest: e.target.value })}
-                    className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-xs"
+                    className="w-full h-8 rounded-md border border-input bg-background px-3 py-1 focus:ring-2 focus:ring-ring focus:outline-none text-[10px] text-muted-foreground"
+                    placeholder="O introduce una URL de bandera..."
                   />
                 </div>
               </div>
