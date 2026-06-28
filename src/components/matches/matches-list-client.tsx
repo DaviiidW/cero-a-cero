@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePolling } from "@/hooks/use-polling";
 
@@ -54,6 +54,7 @@ function getStatusBadge(status: string) {
 }
 
 export function MatchesListClient({ groupId }: MatchesListClientProps) {
+  const [statusFilter, setStatusFilter] = useState<"all" | "finished" | "pending">("all");
   const { data, error, isLoading } = usePolling<MatchesResponse>(async () => {
     const response = await fetch("/api/matches");
     if (!response.ok) {
@@ -95,6 +96,8 @@ export function MatchesListClient({ groupId }: MatchesListClientProps) {
     return <p className="text-sm text-destructive">{error}</p>;
   }
 
+
+
   const matches = data?.matches ?? [];
 
   if (matches.length === 0) {
@@ -105,10 +108,64 @@ export function MatchesListClient({ groupId }: MatchesListClientProps) {
     );
   }
 
+  const filteredMatches = matches.filter((match) => {
+    if (statusFilter === "finished") {
+      return match.status === "FINISHED";
+    }
+    if (statusFilter === "pending") {
+      return match.status !== "FINISHED";
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-4">
-      <ul className="space-y-2.5">
-        {matches.map((match) => {
+      {/* Filtros de estado */}
+      <div className="flex items-center gap-1.5 p-1 bg-muted/40 border border-border/60 rounded-xl w-fit">
+        <button
+          type="button"
+          onClick={() => setStatusFilter("all")}
+          className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            statusFilter === "all"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Todos
+        </button>
+        <button
+          type="button"
+          onClick={() => setStatusFilter("finished")}
+          className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            statusFilter === "finished"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Finalizados
+        </button>
+        <button
+          type="button"
+          onClick={() => setStatusFilter("pending")}
+          className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+            statusFilter === "pending"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Pendientes
+        </button>
+      </div>
+
+      {filteredMatches.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border p-10 text-center text-muted-foreground select-none">
+          {statusFilter === "finished" 
+            ? "No hay partidos finalizados." 
+            : "No hay partidos pendientes."}
+        </div>
+      ) : (
+        <ul className="space-y-2.5">
+        {filteredMatches.map((match) => {
           const matchDate = new Date(match.date);
           const now = new Date();
           const isLive = match.status === "LIVE" || (match.status === "SCHEDULED" && now >= matchDate);
@@ -177,6 +234,7 @@ export function MatchesListClient({ groupId }: MatchesListClientProps) {
           );
         })}
       </ul>
+      )}
       {data?.updatedAt ? (
         <p className="text-[10px] text-muted-foreground text-right italic select-none">
           Última actualización: {new Date(data.updatedAt).toLocaleTimeString("es-ES")} (auto-update 30s)
