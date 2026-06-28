@@ -50,8 +50,6 @@ export function getInviteLink(inviteCode: string): string {
     baseUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
   } else if (process.env.VERCEL_URL) {
     baseUrl = `https://${process.env.VERCEL_URL}`;
-  } else if (process.env.NEXTAUTH_URL) {
-    baseUrl = process.env.NEXTAUTH_URL;
   }
 
   const cleanBaseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;

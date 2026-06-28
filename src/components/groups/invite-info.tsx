@@ -36,9 +36,9 @@ export function InviteInfo({
     setOrigin(window.location.origin);
   }, []);
 
-  const displayInviteLink = origin 
+  const displayInviteLink = origin && !origin.includes("localhost")
     ? `${origin}/unirse/${inviteCode}` 
-    : inviteLink;
+    : `https://cero-a-cero-hu3u.vercel.app/unirse/${inviteCode}`;
 
   const whatsAppLink = getWhatsAppShareLink(groupName, inviteCode, displayInviteLink);
 
