@@ -141,7 +141,7 @@ export function AdminDashboardClient() {
   const [runnerUp, setRunnerUp] = useState("");
   const [thirdPlace, setThirdPlace] = useState("");
   const [savingResults, setSavingResults] = useState(false);
-  const [recalculating, setRecalculating] = useState(false);
+
 
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState("");
@@ -279,26 +279,7 @@ export function AdminDashboardClient() {
     }
   };
 
-  const handleRecalculatePoints = async () => {
-    if (!confirm("¿Estás seguro de que deseas recalcular todos los puntos de las predicciones? Esto restablecerá y volverá a calcular las puntuaciones de todos los usuarios en base a las nuevas reglas 4-1-0.")) {
-      return;
-    }
-    setRecalculating(true);
-    try {
-      const response = await fetch("/api/admin/recalculate-points", {
-        method: "POST",
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Error al recalcular.");
-      }
-      alert(`Puntos recalculados exitosamente:\n- Partidos procesados: ${data.matchesProcessed}\n- Predicciones recalculadas: ${data.predictionsProcessed}`);
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Error al recalcular.");
-    } finally {
-      setRecalculating(false);
-    }
-  };
+
 
   const handleSync = async () => {
     setSyncing(true);
@@ -522,35 +503,14 @@ export function AdminDashboardClient() {
         {/* Acciones de recalculación */}
         <div className="space-y-4 border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6 flex flex-col justify-between">
           <div className="space-y-4">
-            <div className="space-y-1">
-              <h3 className="text-base font-bold text-foreground flex items-center gap-1.5 select-none">
-                🔄 Mantenimiento y Puntuaciones
-              </h3>
-              <p className="text-xs text-muted-foreground select-none">
-                Recalcula todos los puntos de las predicciones de partidos guardados en base al nuevo sistema 4-1-0.
-              </p>
-            </div>
-
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={handleRecalculatePoints}
-                disabled={recalculating}
-                className="w-full sm:w-auto px-5 py-2.5 text-xs font-extrabold rounded-lg bg-destructive text-white hover:bg-destructive/90 transition active:scale-95 disabled:opacity-50 cursor-pointer"
-              >
-                {recalculating ? "Recalculando..." : "Recalcular Todos los Puntos (4-1-0)"}
-              </button>
-            </div>
-
-            {/* Recalcular grupo específico */}
             {groups.length > 0 && (
-              <div className="pt-4 border-t border-border space-y-3">
+              <div className="space-y-3">
                 <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-foreground select-none">
+                  <h3 className="text-base font-bold text-foreground flex items-center gap-1.5 select-none">
                     🎯 Recalcular Grupo Seleccionado
-                  </h4>
-                  <p className="text-[11px] text-muted-foreground select-none">
-                    Recalcula por separado los puntos de partidos o especiales de un grupo.
+                  </h3>
+                  <p className="text-xs text-muted-foreground select-none">
+                    Recalcula por separado los puntos de partidos o especiales de un grupo específico.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2">
