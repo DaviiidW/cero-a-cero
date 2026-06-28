@@ -53,6 +53,10 @@ export async function processFinishedMatchScoring(matchId: string, recalculate =
   const actual = {
     homeGoals: match.homeGoals,
     awayGoals: match.awayGoals,
+    jornada: match.jornada,
+    qualifyingTeam: match.qualifyingTeam,
+    homeTeam: match.homeTeam,
+    awayTeam: match.awayTeam,
   };
 
   const scored = predictions.map((prediction) => ({

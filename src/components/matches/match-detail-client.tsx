@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Lock, Unlock, Calendar, Trophy, Users, Plus, Minus } from "lucide-react";
+import { Lock, Unlock, Calendar, Trophy, Users, Plus, Minus, Check } from "lucide-react";
 
 type MatchDetailClientProps = {
   groupId: string;
@@ -25,15 +25,18 @@ type MatchDetailResponse = {
     date: string;
     phase: string;
     groupStageNumber: number | null;
+    jornada: number;
     status: string;
     homeGoals: number | null;
     awayGoals: number | null;
+    qualifyingTeam?: string | null;
   };
   prediction: {
     predictionHomeGoals: number;
     predictionAwayGoals: number;
     resultType: ResultTypeLabel;
     pointsEarned: number | null;
+    predictionQualify?: string | null;
   } | null;
   groupPredictions?: {
     userId: string;
@@ -42,6 +45,7 @@ type MatchDetailResponse = {
     predictionAwayGoals: number;
     resultType: ResultTypeLabel;
     pointsEarned: number | null;
+    predictionQualify?: string | null;
   }[];
 };
 
@@ -60,6 +64,7 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
 
   const [homeGoals, setHomeGoals] = useState<string>("0");
   const [awayGoals, setAwayGoals] = useState<string>("0");
+  const [predictionQualify, setPredictionQualify] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [formSuccess, setFormSuccess] = useState<string | null>(null);
@@ -69,11 +74,33 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
     if (data?.prediction) {
       setHomeGoals(data.prediction.predictionHomeGoals.toString());
       setAwayGoals(data.prediction.predictionAwayGoals.toString());
+      setPredictionQualify(data.prediction.predictionQualify || null);
     } else {
       setHomeGoals("0");
       setAwayGoals("0");
+      setPredictionQualify(null);
     }
   }, [data?.prediction]);
+
+  const parsedHome = homeGoals === "" ? 0 : parseInt(homeGoals, 10);
+  const parsedAway = awayGoals === "" ? 0 : parseInt(awayGoals, 10);
+
+  // Automatically update predictionQualify based on scores if not a draw
+  useEffect(() => {
+    if (data?.match && data.match.jornada >= 4) {
+      if (parsedHome > parsedAway) {
+        setPredictionQualify(data.match.homeTeam);
+      } else if (parsedHome < parsedAway) {
+        setPredictionQualify(data.match.awayTeam);
+      } else {
+        if (predictionQualify !== data.match.homeTeam && predictionQualify !== data.match.awayTeam) {
+          setPredictionQualify(null);
+        }
+      }
+    } else {
+      setPredictionQualify(null);
+    }
+  }, [parsedHome, parsedAway, data?.match, predictionQualify]);
 
   const adjustHomeGoals = (amount: number) => {
     setHomeGoals((prev) => {
@@ -132,6 +159,11 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
       return;
     }
 
+    if (data?.match && data.match.jornada >= 4 && parsedHome === parsedAway && !predictionQualify) {
+      setFormError("Debes seleccionar qué equipo clasifica a la siguiente ronda.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/groups/${groupId}/matches/${matchId}`, {
@@ -142,6 +174,7 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
         body: JSON.stringify({
           predictionHomeGoals: parsedHome,
           predictionAwayGoals: parsedAway,
+          predictionQualify: data?.match && data.match.jornada >= 4 ? predictionQualify : null,
         }),
       });
 
@@ -229,6 +262,14 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
                 ? `${match.homeGoals ?? 0} - ${match.awayGoals ?? 0}`
                 : "—"}
             </p>
+            {match.jornada >= 4 && (match.status === "LIVE" || match.status === "FINISHED") && (
+              <p className="text-xs text-muted-foreground font-semibold pt-1">
+                Clasifica:{" "}
+                <span className="font-black text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-lg ml-1">
+                  {match.qualifyingTeam || (match.homeGoals !== null && match.awayGoals !== null ? (match.homeGoals > match.awayGoals ? match.homeTeam : match.homeGoals < match.awayGoals ? match.awayTeam : "Por definir") : "Por definir")}
+                </span>
+              </p>
+            )}
           </div>
 
           {/* Sección de Mi Predicción (HU-07) */}
@@ -262,6 +303,14 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
                       {formatResultType(prediction.resultType)}
                     </Badge>
                   </div>
+                  {match.jornada >= 4 && (
+                    <div className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 select-none pt-1">
+                      <span>Clasifica:</span>
+                      <span className="font-extrabold text-foreground bg-accent/15 px-2 py-0.5 rounded-lg border border-accent/20">
+                        {prediction.predictionQualify || (prediction.predictionHomeGoals > prediction.predictionAwayGoals ? match.homeTeam : match.awayTeam)}
+                      </span>
+                    </div>
+                  )}
                   {isFinished ? (
                     <p className="text-xs text-muted-foreground">
                       Puntos obtenidos:{" "}
@@ -389,6 +438,56 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
                   </div>
                 </div>
 
+                {match.jornada >= 4 && (
+                  <div className="flex flex-col items-center justify-center p-4 bg-muted/20 border border-border/40 rounded-2xl space-y-3">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider select-none">
+                      ¿Quién clasifica a la siguiente ronda?
+                    </span>
+                    <div className="flex items-center gap-4 w-full max-w-xs">
+                      <Button
+                        type="button"
+                        disabled={isSubmitting}
+                        variant="outline"
+                        className={`flex-1 font-extrabold text-xs rounded-xl h-10 transition-all select-none flex items-center justify-center gap-1.5 ${
+                          parsedHome === parsedAway
+                            ? predictionQualify === match.homeTeam
+                              ? "!bg-emerald-600 hover:!bg-emerald-700 !text-white !border-emerald-700 shadow-md scale-102 cursor-pointer"
+                              : "opacity-50 hover:opacity-80 border-muted-foreground/20 cursor-pointer"
+                            : predictionQualify === match.homeTeam
+                            ? "!bg-emerald-600 !text-white !border-emerald-700 opacity-100 font-black pointer-events-none shadow-sm"
+                            : "opacity-20 cursor-not-allowed pointer-events-none"
+                        }`}
+                        onClick={() => setPredictionQualify(match.homeTeam)}
+                      >
+                        {match.homeTeam}
+                        {predictionQualify === match.homeTeam && (
+                          <Check className="size-4 shrink-0" />
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        disabled={isSubmitting}
+                        variant="outline"
+                        className={`flex-1 font-extrabold text-xs rounded-xl h-10 transition-all select-none flex items-center justify-center gap-1.5 ${
+                          parsedHome === parsedAway
+                            ? predictionQualify === match.awayTeam
+                              ? "!bg-emerald-600 hover:!bg-emerald-700 !text-white !border-emerald-700 shadow-md scale-102 cursor-pointer"
+                              : "opacity-50 hover:opacity-80 border-muted-foreground/20 cursor-pointer"
+                            : predictionQualify === match.awayTeam
+                            ? "!bg-emerald-600 !text-white !border-emerald-700 opacity-100 font-black pointer-events-none shadow-sm"
+                            : "opacity-20 cursor-not-allowed pointer-events-none"
+                        }`}
+                        onClick={() => setPredictionQualify(match.awayTeam)}
+                      >
+                        {match.awayTeam}
+                        {predictionQualify === match.awayTeam && (
+                          <Check className="size-4 shrink-0" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {formError && (
                   <p className="text-xs text-destructive text-center font-medium bg-destructive/10 py-1.5 px-3 rounded-xl border border-destructive/20">
                     {formError}
@@ -413,7 +512,9 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
                 <p className="text-[10px] text-muted-foreground text-center italic select-none">
                   Puedes registrar o modificar tu predicción hasta 3 minutos antes de que empiece el partido.
                   <span className="block mt-1 font-medium text-accent">
-                    Sistema de puntuación: +3 pts por marcador exacto, +1 pt por resultado simple (1X2).
+                    {match.jornada >= 4 
+                      ? "Sistema de puntuación (Eliminatorias): +1 pt por 1X2, +3 pts adicionales por marcador exacto, y +1 pt por acertar quién clasifica." 
+                      : "Sistema de puntuación: +3 pts por marcador exacto, +1 pt por resultado simple (1X2)."}
                   </span>
                 </p>
               </form>
@@ -454,7 +555,12 @@ export function MatchDetailClient({ groupId, matchId }: MatchDetailClientProps) 
                           {pred.nick}
                         </TableCell>
                         <TableCell className="text-center font-extrabold text-foreground">
-                          {pred.predictionHomeGoals} - {pred.predictionAwayGoals}
+                          <div>{pred.predictionHomeGoals} - {pred.predictionAwayGoals}</div>
+                          {match.jornada >= 4 && (
+                            <div className="text-[10px] text-muted-foreground font-semibold mt-0.5">
+                              Clasifica: {pred.predictionQualify || (pred.predictionHomeGoals > pred.predictionAwayGoals ? match.homeTeam : match.awayTeam)}
+                            </div>
+                          )}
                         </TableCell>
                         {match.status === "FINISHED" && (
                           <TableCell className="text-right py-3">

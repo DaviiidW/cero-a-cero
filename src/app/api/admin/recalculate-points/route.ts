@@ -49,6 +49,10 @@ export async function POST() {
         const actual = {
           homeGoals: match.homeGoals!,
           awayGoals: match.awayGoals!,
+          jornada: match.jornada,
+          qualifyingTeam: match.qualifyingTeam,
+          homeTeam: match.homeTeam,
+          awayTeam: match.awayTeam,
         };
 
         for (const prediction of predictions) {

@@ -44,7 +44,7 @@ export async function getGroupRanking(groupId: string, jornadaFilter?: number | 
       const userId = pred.userId;
       const pts = pred.pointsEarned ?? 0;
       pointsMap.set(userId, (pointsMap.get(userId) ?? 0) + pts);
-      if (pts === 4) {
+      if (pts === 4 || pts === 5) {
         exactCountsMap.set(userId, (exactCountsMap.get(userId) ?? 0) + 1);
       }
     }
@@ -149,7 +149,7 @@ export async function getGlobalRanking(jornadaFilter?: number | number[]) {
       const userId = pred.userId;
       const pts = pred.pointsEarned ?? 0;
       pointsMap.set(userId, (pointsMap.get(userId) ?? 0) + pts);
-      if (pts === 4) {
+      if (pts === 4 || pts === 5) {
         exactCountsMap.set(userId, (exactCountsMap.get(userId) ?? 0) + 1);
       }
     }

@@ -115,12 +115,12 @@ export async function calculateGroupRankingInternal(
     }
   }
 
-  // 5. Fetch exact match counts (4 points predictions)
+  // 5. Fetch exact match counts (4 or 5 points predictions)
   const exactCounts = await tx.prediction.groupBy({
     by: ["userId"],
     where: {
       groupId,
-      pointsEarned: 4,
+      pointsEarned: { in: [4, 5] },
     },
     _count: { id: true },
   });
@@ -241,7 +241,7 @@ export async function calculateGlobalRankingInternal(
   // Fetch exact match counts globally
   const exactCounts = await tx.prediction.groupBy({
     by: ["userId"],
-    where: { pointsEarned: 4 },
+    where: { pointsEarned: { in: [4, 5] } },
     _count: { id: true },
   });
   const exactCountsMap = new Map(exactCounts.map((row) => [row.userId, row._count.id]));

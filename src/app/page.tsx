@@ -115,7 +115,7 @@ export default async function HomePage() {
             </CardHeader>
             <CardContent className="p-4 pt-0">
               <CardDescription className="text-xs leading-relaxed" style={{ color: "#d0d0d0" }}>
-                Consigue 4 puntos por acertar el marcador exacto de un partido, o 1 punto si adivinas el ganador o el empate (1X2) pero no el marcador exacto.
+                Fase de grupos: 4 pts por marcador exacto, 1 pt por 1X2. Eliminatorias (J4+): +1 pt por 1X2, +3 pts adicionales por marcador exacto en 90 min y +1 pt por acertar quién clasifica.
               </CardDescription>
             </CardContent>
           </Card>

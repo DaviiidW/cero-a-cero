@@ -36,6 +36,7 @@ export async function PUT(request: Request, context: RouteContext) {
     status,
     homeGoals,
     awayGoals,
+    qualifyingTeam,
   } = body;
 
   try {
@@ -47,20 +48,38 @@ export async function PUT(request: Request, context: RouteContext) {
       return jsonError("Partido no encontrado", 404);
     }
 
+    const finalJornada = jornada !== undefined ? parseInt(jornada, 10) : existing.jornada;
+    const finalHomeGoals = homeGoals !== undefined ? (homeGoals !== null && homeGoals !== "" ? parseInt(homeGoals, 10) : null) : existing.homeGoals;
+    const finalAwayGoals = awayGoals !== undefined ? (awayGoals !== null && awayGoals !== "" ? parseInt(awayGoals, 10) : null) : existing.awayGoals;
+    const finalHomeTeam = homeTeam !== undefined ? homeTeam : existing.homeTeam;
+    const finalAwayTeam = awayTeam !== undefined ? awayTeam : existing.awayTeam;
+
+    let finalQualifyingTeam = qualifyingTeam !== undefined ? qualifyingTeam : existing.qualifyingTeam;
+    if (finalJornada >= 4 && finalHomeGoals !== null && finalAwayGoals !== null) {
+      if (finalHomeGoals > finalAwayGoals) {
+        finalQualifyingTeam = finalHomeTeam;
+      } else if (finalHomeGoals < finalAwayGoals) {
+        finalQualifyingTeam = finalAwayTeam;
+      }
+    } else if (finalJornada < 4) {
+      finalQualifyingTeam = null;
+    }
+
     const updated = await db.match.update({
       where: { id },
       data: {
-        homeTeam: homeTeam !== undefined ? homeTeam : existing.homeTeam,
-        awayTeam: awayTeam !== undefined ? awayTeam : existing.awayTeam,
+        homeTeam: finalHomeTeam,
+        awayTeam: finalAwayTeam,
         homeTeamCrest: homeTeamCrest !== undefined ? homeTeamCrest : existing.homeTeamCrest,
         awayTeamCrest: awayTeamCrest !== undefined ? awayTeamCrest : existing.awayTeamCrest,
         date: date !== undefined ? parseMadridTimeToUTC(date) : existing.date,
         phase: phase !== undefined ? phase : existing.phase,
         groupStageNumber: groupStageNumber !== undefined ? (groupStageNumber ? parseInt(groupStageNumber, 10) : null) : existing.groupStageNumber,
-        jornada: jornada !== undefined ? parseInt(jornada, 10) : existing.jornada,
+        jornada: finalJornada,
         status: status !== undefined ? status : existing.status,
-        homeGoals: homeGoals !== undefined ? (homeGoals !== null && homeGoals !== "" ? parseInt(homeGoals, 10) : null) : existing.homeGoals,
-        awayGoals: awayGoals !== undefined ? (awayGoals !== null && awayGoals !== "" ? parseInt(awayGoals, 10) : null) : existing.awayGoals,
+        homeGoals: finalHomeGoals,
+        awayGoals: finalAwayGoals,
+        qualifyingTeam: finalQualifyingTeam,
       },
     });
 

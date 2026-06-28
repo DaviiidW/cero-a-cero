@@ -18,6 +18,7 @@ type Match = {
   status: string;
   homeGoals: number | null;
   awayGoals: number | null;
+  qualifyingTeam: string | null;
 };
 
 const PHASES = [
@@ -62,6 +63,7 @@ export function AdminDashboardClient() {
     status: "SCHEDULED",
     homeGoals: "",
     awayGoals: "",
+    qualifyingTeam: "",
   });
 
   // Edit match modal state
@@ -78,6 +80,7 @@ export function AdminDashboardClient() {
     status: "",
     homeGoals: "",
     awayGoals: "",
+    qualifyingTeam: "",
   });
 
   const [formError, setFormError] = useState<string | null>(null);
@@ -139,6 +142,34 @@ export function AdminDashboardClient() {
       console.error("Error fetching groups:", err);
     }
   };
+
+  // Automatically update qualifyingTeam based on scores for create form
+  useEffect(() => {
+    const jNum = parseInt(createForm.jornada, 10);
+    const hg = createForm.homeGoals !== "" ? parseInt(createForm.homeGoals, 10) : null;
+    const ag = createForm.awayGoals !== "" ? parseInt(createForm.awayGoals, 10) : null;
+    if (jNum >= 4 && hg !== null && ag !== null) {
+      if (hg > ag) {
+        setCreateForm((prev) => ({ ...prev, qualifyingTeam: createForm.homeTeam }));
+      } else if (hg < ag) {
+        setCreateForm((prev) => ({ ...prev, qualifyingTeam: createForm.awayTeam }));
+      }
+    }
+  }, [createForm.homeGoals, createForm.awayGoals, createForm.homeTeam, createForm.awayTeam, createForm.jornada]);
+
+  // Automatically update qualifyingTeam based on scores for edit form
+  useEffect(() => {
+    const jNum = parseInt(editForm.jornada, 10);
+    const hg = editForm.homeGoals !== "" ? parseInt(editForm.homeGoals, 10) : null;
+    const ag = editForm.awayGoals !== "" ? parseInt(editForm.awayGoals, 10) : null;
+    if (jNum >= 4 && hg !== null && ag !== null) {
+      if (hg > ag) {
+        setEditForm((prev) => ({ ...prev, qualifyingTeam: editForm.homeTeam }));
+      } else if (hg < ag) {
+        setEditForm((prev) => ({ ...prev, qualifyingTeam: editForm.awayTeam }));
+      }
+    }
+  }, [editForm.homeGoals, editForm.awayGoals, editForm.homeTeam, editForm.awayTeam, editForm.jornada]);
 
   useEffect(() => {
     fetchMatches();
@@ -265,6 +296,7 @@ export function AdminDashboardClient() {
         status: "SCHEDULED",
         homeGoals: "",
         awayGoals: "",
+        qualifyingTeam: "",
       });
       fetchMatches();
     } catch (err: unknown) {
@@ -289,6 +321,7 @@ export function AdminDashboardClient() {
       status: match.status,
       homeGoals: match.homeGoals !== null ? match.homeGoals.toString() : "",
       awayGoals: match.awayGoals !== null ? match.awayGoals.toString() : "",
+      qualifyingTeam: match.qualifyingTeam || "",
     });
     setFormError(null);
     setFormSuccess(null);
@@ -566,6 +599,11 @@ export function AdminDashboardClient() {
                         )}
                         <span>{match.awayTeam}</span>
                       </div>
+                      {match.jornada >= 4 && match.qualifyingTeam && (
+                        <div className="text-[10px] text-accent font-bold mt-0.5">
+                          Clasificado: {match.qualifyingTeam}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-center font-bold text-base whitespace-nowrap">
                       {formatScore(match.homeGoals, match.awayGoals)}
@@ -741,6 +779,21 @@ export function AdminDashboardClient() {
                 </div>
               </div>
 
+              {parseInt(createForm.jornada, 10) >= 4 && (
+                <div className="space-y-1">
+                  <label className="font-medium">Equipo Clasificado</label>
+                  <select
+                    value={createForm.qualifyingTeam}
+                    onChange={(e) => setCreateForm({ ...createForm, qualifyingTeam: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  >
+                    <option value="">Por definir (TBD)</option>
+                    {createForm.homeTeam && <option value={createForm.homeTeam}>{createForm.homeTeam} (Local)</option>}
+                    {createForm.awayTeam && <option value={createForm.awayTeam}>{createForm.awayTeam} (Visitante)</option>}
+                  </select>
+                </div>
+              )}
+
               {formError && <p className="text-xs text-destructive bg-destructive/10 p-2 rounded">{formError}</p>}
               {formSuccess && <p className="text-xs text-emerald-500 bg-emerald-500/10 p-2 rounded">{formSuccess}</p>}
 
@@ -899,6 +952,21 @@ export function AdminDashboardClient() {
                   />
                 </div>
               </div>
+
+              {parseInt(editForm.jornada, 10) >= 4 && (
+                <div className="space-y-1">
+                  <label className="font-medium">Equipo Clasificado</label>
+                  <select
+                    value={editForm.qualifyingTeam}
+                    onChange={(e) => setEditForm({ ...editForm, qualifyingTeam: e.target.value })}
+                    className="w-full h-9 rounded-md border border-input bg-background px-2 py-1 focus:ring-2 focus:ring-ring focus:outline-none"
+                  >
+                    <option value="">Por definir (TBD)</option>
+                    {editForm.homeTeam && <option value={editForm.homeTeam}>{editForm.homeTeam} (Local)</option>}
+                    {editForm.awayTeam && <option value={editForm.awayTeam}>{editForm.awayTeam} (Visitante)</option>}
+                  </select>
+                </div>
+              )}
 
               {formError && <p className="text-xs text-destructive bg-destructive/10 p-2 rounded">{formError}</p>}
               {formSuccess && <p className="text-xs text-emerald-500 bg-emerald-500/10 p-2 rounded">{formSuccess}</p>}

@@ -42,10 +42,23 @@ export async function POST(request: Request) {
     status,
     homeGoals,
     awayGoals,
+    qualifyingTeam,
   } = body;
 
   if (!homeTeam || !awayTeam || !date || !phase || !jornada) {
     return jsonError("Faltan campos obligatorios", 400);
+  }
+
+  let finalQualifyingTeam = qualifyingTeam || null;
+  const jornadaNum = parseInt(jornada, 10);
+  if (jornadaNum >= 4 && homeGoals !== undefined && homeGoals !== null && awayGoals !== undefined && awayGoals !== null) {
+    const hg = parseInt(homeGoals, 10);
+    const ag = parseInt(awayGoals, 10);
+    if (hg > ag) {
+      finalQualifyingTeam = homeTeam;
+    } else if (hg < ag) {
+      finalQualifyingTeam = awayTeam;
+    }
   }
 
   try {
@@ -58,10 +71,11 @@ export async function POST(request: Request) {
         date: parseMadridTimeToUTC(date),
         phase,
         groupStageNumber: groupStageNumber ? parseInt(groupStageNumber, 10) : null,
-        jornada: parseInt(jornada, 10),
+        jornada: jornadaNum,
         status: status || "SCHEDULED",
         homeGoals: homeGoals !== undefined && homeGoals !== null ? parseInt(homeGoals, 10) : null,
         awayGoals: awayGoals !== undefined && awayGoals !== null ? parseInt(awayGoals, 10) : null,
+        qualifyingTeam: finalQualifyingTeam,
       },
     });
 

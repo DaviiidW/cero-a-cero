@@ -66,6 +66,7 @@ export async function GET(_request: Request, context: RouteContext) {
         predictionAwayGoals: true,
         resultType: true,
         pointsEarned: true,
+        predictionQualify: true,
         user: {
           select: {
             nickGlobal: true,
@@ -85,6 +86,7 @@ export async function GET(_request: Request, context: RouteContext) {
       predictionAwayGoals: pred.predictionAwayGoals,
       resultType: pred.resultType,
       pointsEarned: pred.pointsEarned,
+      predictionQualify: pred.predictionQualify,
     }));
   }
 
@@ -145,6 +147,22 @@ export async function POST(request: Request, context: RouteContext) {
     resultType = "AWAY";
   }
 
+  // Validaciones y cálculo automático del equipo clasificado (Jornada 4+)
+  let predictionQualify = body.predictionQualify;
+  if (match.jornada >= 4) {
+    if (homeGoals > awayGoals) {
+      predictionQualify = match.homeTeam;
+    } else if (homeGoals < awayGoals) {
+      predictionQualify = match.awayTeam;
+    } else {
+      if (predictionQualify !== match.homeTeam && predictionQualify !== match.awayTeam) {
+        return jsonError("Debes seleccionar qué equipo clasifica a la siguiente ronda", 400);
+      }
+    }
+  } else {
+    predictionQualify = null;
+  }
+
   // HU-09: Evitar duplicidad (usando findUnique y upsert/update en transacción)
   const existing = await db.prediction.findUnique({
     where: {
@@ -164,6 +182,7 @@ export async function POST(request: Request, context: RouteContext) {
           predictionHomeGoals: homeGoals,
           predictionAwayGoals: awayGoals,
           resultType,
+          predictionQualify,
         },
       });
 
@@ -176,6 +195,7 @@ export async function POST(request: Request, context: RouteContext) {
           groupId,
           predictionHomeGoals: homeGoals,
           predictionAwayGoals: awayGoals,
+          predictionQualify,
           action: "UPDATE",
         },
       });
@@ -190,6 +210,7 @@ export async function POST(request: Request, context: RouteContext) {
           predictionHomeGoals: homeGoals,
           predictionAwayGoals: awayGoals,
           resultType,
+          predictionQualify,
         },
       });
 
@@ -202,6 +223,7 @@ export async function POST(request: Request, context: RouteContext) {
           groupId,
           predictionHomeGoals: homeGoals,
           predictionAwayGoals: awayGoals,
+          predictionQualify,
           action: "CREATE",
         },
       });

@@ -193,10 +193,17 @@ export function RankingTable({
                   Distribución de Puntos
                 </p>
                 <ul className="space-y-1.5 list-disc pl-4 text-muted-foreground">
-                  <li><strong>Partidos (Resultados regulares)</strong>:
+                  <li><strong>Partidos (Resultados regulares, J1-J3)</strong>:
                     <ul className="list-circle pl-4 mt-0.5 space-y-0.5">
                       <li><span className="text-foreground font-semibold">4 puntos</span> por acertar el marcador exacto.</li>
                       <li><span className="text-foreground font-semibold">1 punto</span> por acertar ganador o empate (1X2) pero no el marcador.</li>
+                    </ul>
+                  </li>
+                  <li><strong>Partidos Eliminatorios (J4 en adelante)</strong>:
+                    <ul className="list-circle pl-4 mt-0.5 space-y-0.5">
+                      <li><span className="text-foreground font-semibold">1 punto</span> por acertar ganador o empate (1X2) en los 90 minutos.</li>
+                      <li><span className="text-foreground font-semibold">3 puntos adicionales</span> por acertar el marcador exacto en los 90 minutos.</li>
+                      <li><span className="text-foreground font-semibold">1 punto adicional</span> por acertar la selección que clasifica a la siguiente ronda.</li>
                     </ul>
                   </li>
                   <li><strong>Especiales (Bonos de torneo)</strong>:
@@ -216,7 +223,7 @@ export function RankingTable({
                   Criterios de Desempate (en orden)
                 </p>
                 <ol className="space-y-1.5 list-decimal pl-4 text-muted-foreground">
-                  <li><strong>M.E. (Marcadores Exactos)</strong>: Quien tenga la mayor cantidad de aciertos perfectos de marcador exacto (4 puntos).</li>
+                  <li><strong>M.E. (Marcadores Exactos)</strong>: Quien tenga la mayor cantidad de aciertos perfectos de marcador exacto (4 o 5 puntos).</li>
                   <li><strong>Campeón del Mundo</strong>: Quien haya acertado correctamente el campeón del mundo en su predicción especial.</li>
                 </ol>
               </div>

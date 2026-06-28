@@ -111,6 +111,7 @@ model Match {
   status           MatchStatus @default(SCHEDULED)
   homeGoals        Int?
   awayGoals        Int?
+  qualifyingTeam   String?
 
   predictions         Prediction[]
   predictionHistories PredictionHistory[]
@@ -129,6 +130,7 @@ model Prediction {
   resultType          ResultType
   pointsEarned        Int?
   scoredAt            DateTime?
+  predictionQualify   String?
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
 
@@ -158,6 +160,7 @@ model PredictionHistory {
   groupId             String
   predictionHomeGoals Int
   predictionAwayGoals Int
+  predictionQualify   String?
   action              String   // "CREATE" | "UPDATE"
   createdAt           DateTime @default(now())
 
