@@ -1,18 +1,26 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
+import { requireSuperAdmin } from "@/lib/auth-admin";
 import { syncMatchesFromFootballData } from "@/lib/football-data/sync";
 
-function isAuthorizedSync(request: Request): boolean {
+async function isAuthorizedSync(request: Request): Promise<boolean> {
+  // Option 1: Logged in super admin
+  const admin = await requireSuperAdmin();
+  if (admin) return true;
+
+  // Option 2: Cron secret header
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    return request.headers.get("x-cron-secret") === cronSecret;
+  if (cronSecret && request.headers.get("x-cron-secret") === cronSecret) {
+    return true;
   }
 
-  return process.env.NODE_ENV === "development";
+  // Option 3: Local development fallback (only if no secret is defined)
+  return process.env.NODE_ENV === "development" && !cronSecret;
 }
 
 export async function POST(request: Request) {
-  if (!isAuthorizedSync(request)) {
+  const authorized = await isAuthorizedSync(request);
+  if (!authorized) {
     return jsonError("No autorizado", 401);
   }
 
