@@ -61,6 +61,9 @@ export function AdminDashboardClient() {
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [recalculatingMatches, setRecalculatingMatches] = useState(false);
   const [recalculatingSpecials, setRecalculatingSpecials] = useState(false);
+  
+  const [members, setMembers] = useState<{ userId: string; nick: string }[]>([]);
+  const [selectedMemberId, setSelectedMemberId] = useState("");
 
   const fetchMatches = async () => {
     setLoading(true);
@@ -169,6 +172,59 @@ export function AdminDashboardClient() {
     } finally {
       if (type === "matches") setRecalculatingMatches(false);
       else setRecalculatingSpecials(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedGroupId) {
+      setMembers([]);
+      setSelectedMemberId("");
+      return;
+    }
+
+    const fetchMembers = async () => {
+      try {
+        const response = await fetch(`/api/admin/groups/${selectedGroupId}/members`);
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+        setMembers(data.members || []);
+        setSelectedMemberId("");
+      } catch {
+        setMembers([]);
+        setSelectedMemberId("");
+      }
+    };
+
+    fetchMembers();
+  }, [selectedGroupId]);
+
+  const handleRecalculateMember = async () => {
+    if (!selectedGroupId || !selectedMemberId) return;
+    const memberName = members.find((m) => m.userId === selectedMemberId)?.nick || "este jugador";
+    if (!confirm(`¿Estás seguro de que deseas recalcular los puntos de ${memberName}?`)) {
+      return;
+    }
+    setRecalculatingMatches(true);
+
+    try {
+      const response = await fetch("/api/admin/recalculate-group-ranking", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groupId: selectedGroupId,
+          type: "matches",
+          userId: selectedMemberId,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Error al recalcular.");
+      }
+      alert(data.message || "Puntos de miembro recalculados con éxito.");
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Error al recalcular.");
+    } finally {
+      setRecalculatingMatches(false);
     }
   };
 
@@ -458,6 +514,42 @@ export function AdminDashboardClient() {
                     </button>
                   </div>
                 </div>
+
+                {/* Recalcular Miembro Específico */}
+                {members.length > 0 && (
+                  <div className="pt-3 border-t border-border/60 space-y-2">
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-bold text-foreground select-none">
+                        👤 Recalcular Miembro
+                      </h4>
+                      <p className="text-[10px] text-muted-foreground select-none">
+                        Recalcula la puntuación de un jugador individual del grupo.
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <select
+                        value={selectedMemberId}
+                        onChange={(e) => setSelectedMemberId(e.target.value)}
+                        className="w-full h-9 rounded-md border border-input bg-background px-2 py-1 text-xs focus:ring-2 focus:ring-ring focus:outline-none"
+                      >
+                        <option value="">Seleccionar miembro...</option>
+                        {members.map((m) => (
+                          <option key={m.userId} value={m.userId}>
+                            {m.nick}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleRecalculateMember}
+                        disabled={recalculatingMatches || recalculatingSpecials || !selectedMemberId}
+                        className="w-full px-3 py-2 text-[11px] font-bold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition disabled:opacity-50 cursor-pointer text-center"
+                      >
+                        {recalculatingMatches ? "Recalculando..." : "Recalcular Puntos de Miembro"}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

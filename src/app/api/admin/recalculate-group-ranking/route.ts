@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     return jsonError("Cuerpo de solicitud inválido", 400);
   }
 
-  const { groupId, type } = body;
+  const { groupId, type, userId } = body;
   if (!groupId) {
     return jsonError("El campo groupId es obligatorio", 400);
   }
@@ -40,81 +40,116 @@ export async function POST(request: Request) {
     const start = Date.now();
 
     if (type === "matches") {
-      // Recalculate match prediction points for this group only
+      // 1. Find all finished matches
+      const finishedMatches = await db.match.findMany({
+        where: {
+          status: "FINISHED",
+          homeGoals: { not: null },
+          awayGoals: { not: null },
+        },
+      });
+
+      const finishedMatchesMap = new Map(finishedMatches.map((m) => [m.id, m]));
+
+      // 2. Fetch predictions for this group (optionally filtered by user)
+      const predictions = await db.prediction.findMany({
+        where: { 
+          groupId,
+          ...(userId ? { userId } : {}),
+        },
+      });
+
+      // 3. Compute in-memory points and group prediction updates
+      const userTotalPoints = new Map<string, number>();
+      const groupedPredictionIds = new Map<number, string[]>();
+
+      for (const prediction of predictions) {
+        const match = finishedMatchesMap.get(prediction.matchId);
+        if (!match) continue;
+
+        const actual = {
+          homeGoals: match.homeGoals!,
+          awayGoals: match.awayGoals!,
+          jornada: match.jornada,
+          qualifyingTeam: match.qualifyingTeam,
+          homeTeam: match.homeTeam,
+          awayTeam: match.awayTeam,
+        };
+
+        const pointsEarned = calculatePredictionPoints(prediction, actual);
+
+        // Accumulate user total points for matches
+        userTotalPoints.set(
+          prediction.userId,
+          (userTotalPoints.get(prediction.userId) ?? 0) + pointsEarned
+        );
+
+        // Group prediction IDs by points earned
+        if (!groupedPredictionIds.has(pointsEarned)) {
+          groupedPredictionIds.set(pointsEarned, []);
+        }
+        groupedPredictionIds.get(pointsEarned)!.push(prediction.id);
+      }
+
+      // 4. Batch updates inside a transaction
       await db.$transaction(async (tx) => {
-        // 1. Reset all prediction points for this group
+        // Reset predictions for this group (optionally filtered by user)
         await tx.prediction.updateMany({
-          where: { groupId },
+          where: { 
+            groupId,
+            ...(userId ? { userId } : {}),
+          },
           data: {
             pointsEarned: null,
             scoredAt: null,
           },
         });
 
-        // 2. Reset all Points entries for this group to 0
+        // Reset user Points table records for this group to 0 (optionally filtered by user)
         await tx.points.updateMany({
-          where: { groupId },
+          where: { 
+            groupId,
+            ...(userId ? { userId } : {}),
+          },
           data: {
             points: 0,
           },
         });
 
-        // 3. Find all finished matches
-        const finishedMatches = await tx.match.findMany({
-          where: {
-            status: "FINISHED",
-            homeGoals: { not: null },
-            awayGoals: { not: null },
-          },
-        });
-
-        // 4. Recalculate predictions for this group and each finished match
-        for (const match of finishedMatches) {
-          const predictions = await tx.prediction.findMany({
-            where: { matchId: match.id, groupId },
+        // Bulk update predictions grouped by points
+        for (const [points, ids] of groupedPredictionIds.entries()) {
+          if (ids.length === 0) continue;
+          await tx.prediction.updateMany({
+            where: { id: { in: ids } },
+            data: {
+              pointsEarned: points,
+              scoredAt: new Date(),
+            },
           });
+        }
 
-          const actual = {
-            homeGoals: match.homeGoals!,
-            awayGoals: match.awayGoals!,
-            jornada: match.jornada,
-            qualifyingTeam: match.qualifyingTeam,
-            homeTeam: match.homeTeam,
-            awayTeam: match.awayTeam,
-          };
-
-          for (const prediction of predictions) {
-            const pointsEarned = calculatePredictionPoints(prediction, actual);
-
-            await tx.prediction.update({
-              where: { id: prediction.id },
-              data: {
-                pointsEarned,
-                scoredAt: new Date(),
-              },
-            });
-
-            await tx.points.upsert({
-              where: {
-                userId_groupId: {
-                  userId: prediction.userId,
-                  groupId,
-                },
-              },
-              create: {
-                userId: prediction.userId,
+        // Upsert cumulative points for each user in this group
+        for (const [uid, total] of userTotalPoints.entries()) {
+          await tx.points.upsert({
+            where: {
+              userId_groupId: {
+                userId: uid,
                 groupId,
-                points: pointsEarned,
               },
-              update: {
-                points: { increment: pointsEarned },
-              },
-            });
-          }
+            },
+            create: {
+              userId: uid,
+              groupId,
+              points: total,
+            },
+            update: {
+              points: total,
+            },
+          });
         }
       }, {
-        maxWait: 15000,
-        timeout: 60000,
+        maxWait: 10000,
+        timeout: 20000,
       });
     }
 
